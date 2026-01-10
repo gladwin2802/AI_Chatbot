@@ -1,3 +1,8 @@
+import { useState } from 'react'
+import { IoAddOutline } from 'react-icons/io5'
+import { IoTrashOutline } from 'react-icons/io5'
+import { IoCreateOutline, IoCheckmark, IoClose } from 'react-icons/io5'
+import { IoSettingsOutline } from 'react-icons/io5'
 import '../styles/Sidebar.css'
 
 function Sidebar({
@@ -8,9 +13,11 @@ function Sidebar({
   onDeleteConversation,
   onOpenSettings,
   isOpen,
-  theme,
-  onToggleTheme
+  onUpdateConversation
 }) {
+  const [editingId, setEditingId] = useState(null)
+  const [editedTitle, setEditedTitle] = useState('')
+
   const formatDate = (dateStr) => {
     const date = new Date(dateStr)
     const now = new Date()
@@ -23,13 +30,32 @@ function Sidebar({
     return date.toLocaleDateString()
   }
 
+  const handleStartEdit = (conv, e) => {
+    e.stopPropagation()
+    setEditingId(conv.id)
+    setEditedTitle(conv.title)
+  }
+
+  const handleSaveEdit = (convId, e) => {
+    e.stopPropagation()
+    if (editedTitle.trim()) {
+      onUpdateConversation(convId, { title: editedTitle.trim() })
+      setEditingId(null)
+      setEditedTitle('')
+    }
+  }
+
+  const handleCancelEdit = (e) => {
+    e.stopPropagation()
+    setEditingId(null)
+    setEditedTitle('')
+  }
+
   return (
     <div className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
       <div className="sidebar-header">
         <button className="new-chat-btn" onClick={onNewConversation}>
-          <svg className="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <IoAddOutline className="icon" size={18} />
           New Chat
         </button>
       </div>
@@ -42,43 +68,73 @@ function Sidebar({
             onClick={() => onSelectConversation(conv.id)}
           >
             <div className="conversation-content">
-              <div className="conversation-title">{conv.title}</div>
-              <div className="conversation-date">{formatDate(conv.createdAt)}</div>
+              {editingId === conv.id ? (
+                <div className="conversation-edit-wrapper" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="text"
+                    value={editedTitle}
+                    onChange={(e) => setEditedTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveEdit(conv.id, e)
+                      if (e.key === 'Escape') handleCancelEdit(e)
+                    }}
+                    className="conversation-edit-input"
+                    autoFocus
+                  />
+                  <div className="conversation-edit-actions">
+                    <button
+                      onClick={(e) => handleSaveEdit(conv.id, e)}
+                      className="save-btn"
+                      title="Save"
+                    >
+                      <IoCheckmark size={14} />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="cancel-btn"
+                      title="Cancel"
+                    >
+                      <IoClose size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="conversation-title">{conv.title}</div>
+                  <div className="conversation-date">{formatDate(conv.createdAt)}</div>
+                </>
+              )}
             </div>
-            <button
-              className="delete-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                onDeleteConversation(conv.id)
-              }}
-              title="Delete conversation"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+            <div className="conversation-actions">
+              {editingId !== conv.id && (
+                <>
+                  <button
+                    className="edit-btn"
+                    onClick={(e) => handleStartEdit(conv, e)}
+                    title="Edit title"
+                  >
+                    <IoCreateOutline size={14} />
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteConversation(conv.id)
+                    }}
+                    title="Delete conversation"
+                  >
+                    <IoTrashOutline size={14} />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
       </div>
 
       <div className="sidebar-footer">
-        <button className="theme-toggle-btn" onClick={onToggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
-          {theme === 'dark' ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="5" stroke="currentColor" strokeWidth="2"/>
-              <path d="M12 1V3M12 21V23M23 12H21M3 12H1M20.49 20.49L19.07 19.07M4.93 4.93L3.51 3.51M20.49 3.51L19.07 4.93M4.93 19.07L3.51 20.49" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </button>
         <button className="settings-btn" onClick={onOpenSettings}>
-          <svg className="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/>
-            <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
+          <IoSettingsOutline className="icon" size={18} />
           Settings
         </button>
       </div>

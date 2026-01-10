@@ -61,6 +61,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   transition: background-color 0.2s;
 }
 
@@ -75,6 +76,7 @@
 .conversation-content {
   flex: 1;
   overflow: hidden;
+  min-width: 0;
 }
 
 .conversation-title {
@@ -90,26 +92,93 @@
   color: var(--text-secondary);
 }
 
+.conversation-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.conversation-item:hover .conversation-actions {
+  opacity: 1;
+}
+
+.edit-btn,
 .delete-btn {
   background: none;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 4px;
-  opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
+  padding: 6px;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.edit-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 .delete-btn:hover {
   background-color: var(--bg-hover);
+  color: #ef4444;
 }
 
-.conversation-item:hover .delete-btn {
-  opacity: 1;
+.conversation-edit-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.conversation-edit-input {
+  width: 100%;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+}
+
+.conversation-edit-input:focus {
+  border-color: var(--button-bg);
+}
+
+.conversation-edit-actions {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.conversation-edit-actions .save-btn,
+.conversation-edit-actions .cancel-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conversation-edit-actions .save-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--button-bg);
+}
+
+.conversation-edit-actions .cancel-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-secondary);
 }
 
 .sidebar-footer {

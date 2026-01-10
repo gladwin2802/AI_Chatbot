@@ -81,20 +81,21 @@ function App() {
         onSelectConversation={setCurrentConversationId}
         onNewConversation={createNewConversation}
         onDeleteConversation={deleteConversation}
+        onUpdateConversation={updateConversation}
         onOpenSettings={() => setShowSettings(true)}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
       
       <ChatArea
         conversation={currentConversation}
         onUpdateConversation={updateConversation}
         settings={settings}
+        onUpdateSettings={setSettings}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {showSettings && (
