@@ -1,0 +1,217 @@
+.window-size-selector {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.window-size-display {
+    display: flex;
+    align-items: stretch;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.window-size-display:hover {
+    border-color: var(--primary-color);
+}
+
+.window-size-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex: 0 0 auto;
+}
+
+.window-size-btn:hover:not(:disabled) {
+    background: var(--primary-color);
+    color: white;
+}
+
+.window-size-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.window-size-btn.decrement {
+    border-right: 1px solid var(--border-color);
+}
+
+.window-size-btn.increment {
+    border-left: 1px solid var(--border-color);
+}
+
+.window-size-value {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: 80px;
+}
+
+.window-size-value:hover {
+    background: var(--hover-bg);
+}
+
+.window-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.window-number {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--primary-color);
+}
+
+.window-size-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    min-width: 280px;
+    overflow: hidden;
+    animation: slideDownFade 0.2s ease;
+}
+
+@keyframes slideDownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-header {
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--header-bg);
+    letter-spacing: 0.3px;
+}
+
+.preset-sizes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 16px;
+}
+
+.preset-btn {
+    padding: 10px;
+    background: var(--input-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover:not(:disabled) {
+    background: var(--hover-bg);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.preset-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(16, 163, 127, 0.3);
+}
+
+.preset-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.custom-size {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+    background: var(--message-bg);
+}
+
+.custom-size label {
+    font-size: 13px;
+    color: var(--text-color);
+    font-weight: 600;
+    min-width: fit-content;
+}
+
+.custom-input {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--input-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.custom-input:focus {
+    border-color: var(--primary-color);
+    background: var(--hover-bg);
+}
+
+.apply-custom-btn {
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.apply-custom-btn:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(16, 163, 127, 0.3);
+}
+
+.window-info {
+    padding: 10px 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    background: var(--info-bg);
+    border-top: 1px solid var(--border-color);
+    font-weight: 500;
+}

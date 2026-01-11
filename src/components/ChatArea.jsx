@@ -9,10 +9,37 @@ import {
 import { IoSunnyOutline, IoMoonOutline } from "react-icons/io5";
 import { IoCreateOutline, IoCheckmark, IoClose } from "react-icons/io5";
 import { IoChatbubblesOutline, IoCopyOutline } from "react-icons/io5";
-import { IoChevronUp, IoChevronDown } from "react-icons/io5";
+import {
+    IoChevronUp,
+    IoChevronDown,
+    IoWarning,
+    IoSettingsOutline,
+} from "react-icons/io5";
 import Message from "./Message";
+import ContextSettingsModal from "./ContextSettingsModal";
+import MessageSelector from "./MessageSelector";
 import { sendMessageToOpenAI, fetchAvailableModels } from "../utils/openai";
-import { saveSettings } from "../utils/storage";
+import {
+    saveSettings,
+    loadContextStrategy,
+    saveContextStrategy,
+    loadConversationSummaries,
+    saveConversationSummaries,
+    loadWindowSize,
+    saveWindowSize,
+    loadSummarizationMode,
+    saveSummarizationMode,
+} from "../utils/storage";
+import {
+    CONTEXT_STRATEGIES,
+    estimateMessageTokens,
+    calculateTotalTokens,
+    getTokenPercentage,
+    getTokenColor,
+    selectRecentMessagesWithinLimit,
+    prepareMessagesForAPI,
+    createSimpleSummary,
+} from "../utils/contextManager";
 import "../styles/ChatArea.css";
 
 function ChatArea({
@@ -39,9 +66,25 @@ function ChatArea({
     const [modelSearchQuery, setModelSearchQuery] = useState("");
     const [attachedFiles, setAttachedFiles] = useState([]);
     const [tokenCount, setTokenCount] = useState(0);
+    const [systemMessageTokens, setSystemMessageTokens] = useState(0);
     const [showFilePreview, setShowFilePreview] = useState(false);
     const [previewFile, setPreviewFile] = useState(null);
     const [copiedFile, setCopiedFile] = useState(false);
+    const [contextStrategy, setContextStrategy] = useState(
+        loadContextStrategy()
+    );
+    const [selectedMessageIds, setSelectedMessageIds] = useState([]);
+    const [showMessageSelector, setShowMessageSelector] = useState(false);
+    const [conversationSummaries, setConversationSummaries] = useState(
+        loadConversationSummaries()
+    );
+    const [showContextWarning, setShowContextWarning] = useState(false);
+    const [historyTokenCount, setHistoryTokenCount] = useState(0);
+    const [windowSize, setWindowSize] = useState(loadWindowSize());
+    const [showContextSettings, setShowContextSettings] = useState(false);
+    const [summarizationMode, setSummarizationMode] = useState(
+        loadSummarizationMode()
+    );
     const messagesEndRef = useRef(null);
     const textareaRef = useRef(null);
     const messagesContainerRef = useRef(null);
@@ -79,6 +122,71 @@ function ChatArea({
 
         loadModels();
     }, [settings.baseUrl, settings.apiKey]);
+
+    useEffect(() => {
+        if (conversation && conversation.messages.length > 0) {
+            let totalHistoryTokens;
+
+            if (contextStrategy === CONTEXT_STRATEGIES.SLIDING_WINDOW) {
+                const recentMessages = conversation.messages.slice(-windowSize);
+                totalHistoryTokens = calculateTotalTokens(recentMessages);
+            } else if (
+                contextStrategy === CONTEXT_STRATEGIES.FULL_HISTORY &&
+                selectedMessageIds.length > 0
+            ) {
+                const selectedMessages = conversation.messages.filter((msg) =>
+                    selectedMessageIds.includes(msg.id)
+                );
+                totalHistoryTokens = calculateTotalTokens(selectedMessages);
+            } else {
+                totalHistoryTokens = calculateTotalTokens(
+                    conversation.messages
+                );
+            }
+
+            setHistoryTokenCount(totalHistoryTokens);
+
+            const percentage = getTokenPercentage(
+                totalHistoryTokens,
+                settings.maxTokens
+            );
+            setShowContextWarning(percentage >= 80);
+
+            if (contextStrategy === CONTEXT_STRATEGIES.FULL_HISTORY) {
+                const recentIds = selectRecentMessagesWithinLimit(
+                    conversation.messages,
+                    settings.maxTokens
+                );
+                setSelectedMessageIds(recentIds);
+            }
+        }
+    }, [
+        conversation?.messages,
+        settings.maxTokens,
+        contextStrategy,
+        windowSize,
+        selectedMessageIds.length,
+    ]);
+
+    useEffect(() => {
+        saveContextStrategy(contextStrategy);
+    }, [contextStrategy]);
+
+    useEffect(() => {
+        saveWindowSize(windowSize);
+    }, [windowSize]);
+
+    useEffect(() => {
+        saveSummarizationMode(summarizationMode);
+    }, [summarizationMode]);
+
+    const handleWindowSizeChange = (newSize) => {
+        setWindowSize(newSize);
+    };
+
+    const handleSummarizationModeChange = (mode) => {
+        setSummarizationMode(mode);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -123,6 +231,54 @@ function ChatArea({
         setModelSearchQuery("");
     };
 
+    const handleStrategyChange = (newStrategy) => {
+        setContextStrategy(newStrategy);
+
+        if (newStrategy === CONTEXT_STRATEGIES.FULL_HISTORY && conversation) {
+            const recentIds = selectRecentMessagesWithinLimit(
+                conversation.messages,
+                settings.maxTokens
+            );
+            setSelectedMessageIds(recentIds);
+        }
+    };
+
+    const handleSummarizeConversation = () => {
+        if (!conversation || conversation.messages.length === 0) return;
+
+        const currentSummary = conversationSummaries[conversation.id] || {};
+        const lastIndex = currentSummary.lastSummarizedIndex || -1;
+
+        const messagesToSummarize = conversation.messages.slice(
+            0,
+            lastIndex + 1
+        );
+        const newMessages = conversation.messages.slice(lastIndex + 1);
+
+        let summary = "";
+        if (currentSummary.summary) {
+            summary = currentSummary.summary + "\n\n";
+        }
+
+        if (newMessages.length > 0) {
+            summary += createSimpleSummary(newMessages);
+        } else {
+            summary += createSimpleSummary(messagesToSummarize);
+        }
+
+        const updatedSummaries = {
+            ...conversationSummaries,
+            [conversation.id]: {
+                summary,
+                lastSummarizedIndex: conversation.messages.length - 1,
+                createdAt: new Date().toISOString(),
+            },
+        };
+
+        setConversationSummaries(updatedSummaries);
+        saveConversationSummaries(updatedSummaries);
+    };
+
     const filteredModels = availableModels.filter((model) =>
         model.id.toLowerCase().includes(modelSearchQuery.toLowerCase())
     );
@@ -145,6 +301,11 @@ function ChatArea({
         setTokenCount(totalTokens);
     }, [input, attachedFiles]);
 
+    useEffect(() => {
+        const systemMsg = settings.systemMessage || "";
+        setSystemMessageTokens(estimateTokenCount(systemMsg));
+    }, [settings.systemMessage]);
+
     const getMaxContextTokens = () => {
         const model = availableModels.find((m) => m.id === settings.model);
         return model?.context_length || 128000;
@@ -153,9 +314,13 @@ function ChatArea({
     const handleFileSelect = async (e) => {
         const files = Array.from(e.target.files);
 
-        if (tokenCount >= settings.maxTokens) {
+        const usableTokens = settings.maxTokens - systemMessageTokens;
+        if (tokenCount >= usableTokens) {
             alert(
-                "Cannot attach files: Token limit exceeded. Please remove some files or increase Max Tokens in settings."
+                `Cannot attach files: Input token limit reached.\n\n` +
+                    `Current input: ${tokenCount.toLocaleString()} tokens\n` +
+                    `Available: ${usableTokens.toLocaleString()} tokens (after ${systemMessageTokens.toLocaleString()} system message tokens)\n\n` +
+                    `Please remove some files or increase Max Tokens in settings.`
             );
             e.target.value = "";
             return;
@@ -347,9 +512,13 @@ function ChatArea({
     const handleSend = async () => {
         if (!input.trim() || !conversation || isLoading) return;
 
-        if (tokenCount > settings.maxTokens) {
+        const usableTokens = settings.maxTokens - systemMessageTokens;
+        if (tokenCount > usableTokens) {
             alert(
-                "Cannot send message: Token limit exceeded. Please remove some files, reduce message length, or increase Max Tokens in settings."
+                `Cannot send message: Input token limit exceeded.\n\n` +
+                    `Your input: ${tokenCount.toLocaleString()} tokens\n` +
+                    `Available: ${usableTokens.toLocaleString()} tokens (after ${systemMessageTokens.toLocaleString()} system message tokens)\n\n` +
+                    `Please remove some files, reduce message length, or increase Max Tokens in settings.`
             );
             return;
         }
@@ -395,23 +564,63 @@ function ChatArea({
         };
 
         const updatedMessages = [...conversation.messages, userMessage];
-        const apiMessages = [
-            ...conversation.messages.map((m) => ({
-                role: m.role,
-                content:
-                    m.content +
-                    (m.attachedFiles?.length > 0
-                        ? "\n\n--- Attached Files ---\n" +
-                          m.attachedFiles
-                              .map((f) => `\n[File: ${f.name}]\n${f.content}\n`)
-                              .join("")
-                        : ""),
-            })),
-            {
-                role: apiMessage.role,
-                content: apiMessage.content,
-            },
-        ];
+
+        let apiMessages;
+        const summaryData = conversationSummaries[conversation.id];
+
+        if (contextStrategy === CONTEXT_STRATEGIES.FULL_HISTORY) {
+            apiMessages = prepareMessagesForAPI(
+                updatedMessages,
+                contextStrategy,
+                selectedMessageIds.length > 0 ? selectedMessageIds : undefined,
+                null,
+                5,
+                settings.systemMessage || ""
+            );
+        } else if (contextStrategy === CONTEXT_STRATEGIES.SUMMARIZATION) {
+            apiMessages = prepareMessagesForAPI(
+                updatedMessages,
+                contextStrategy,
+                [],
+                summaryData,
+                5,
+                settings.systemMessage || ""
+            );
+        } else if (contextStrategy === CONTEXT_STRATEGIES.SLIDING_WINDOW) {
+            apiMessages = prepareMessagesForAPI(
+                updatedMessages,
+                contextStrategy,
+                [],
+                null,
+                windowSize,
+                settings.systemMessage || ""
+            );
+        } else {
+            apiMessages = prepareMessagesForAPI(
+                updatedMessages,
+                contextStrategy,
+                [],
+                null,
+                5,
+                settings.systemMessage || ""
+            );
+        }
+
+        const totalApiTokens = apiMessages.reduce((total, msg) => {
+            return total + Math.ceil(msg.content.length / 4);
+        }, 0);
+
+        if (totalApiTokens > settings.maxTokens) {
+            alert(
+                `Cannot send message: Total context (${totalApiTokens.toLocaleString()} tokens) exceeds limit (${settings.maxTokens.toLocaleString()} tokens).\n\n` +
+                    `Please try:\n` +
+                    `• Switch to a different context strategy (e.g., Sliding Window or Summarization)\n` +
+                    `• Reduce window size or deselect some messages\n` +
+                    `• Increase Max Tokens in settings\n` +
+                    `• Shorten your message or remove attachments`
+            );
+            return;
+        }
 
         const title =
             conversation.messages.length === 0
@@ -426,6 +635,13 @@ function ChatArea({
         setInput("");
         setAttachedFiles([]);
         setIsLoading(true);
+
+        if (
+            contextStrategy === CONTEXT_STRATEGIES.SUMMARIZATION &&
+            summarizationMode === "auto"
+        ) {
+            handleSummarizeConversation();
+        }
 
         try {
             const response = await sendMessageToOpenAI(apiMessages, settings);
@@ -610,6 +826,26 @@ function ChatArea({
                 <div ref={messagesEndRef} />
             </div>
 
+            {showContextWarning && (
+                <div className="context-warning-banner">
+                    <IoWarning size={20} />
+                    <span>
+                        Context limit approaching (
+                        {getTokenPercentage(
+                            historyTokenCount,
+                            settings.maxTokens
+                        )}
+                        %). Consider using a different context strategy.
+                    </span>
+                    <button
+                        className="dismiss-warning-btn"
+                        onClick={() => setShowContextWarning(false)}
+                    >
+                        <IoClose size={18} />
+                    </button>
+                </div>
+            )}
+
             {conversation.messages.length > 0 && (
                 <>
                     <div
@@ -699,73 +935,96 @@ function ChatArea({
 
                 <div className="input-wrapper">
                     <div className="input-wrapper-inner">
-                        <div
-                            className="inline-model-selector"
-                            ref={modelDropdownRef}
-                        >
-                            <button
-                                className="model-trigger-btn"
-                                onClick={() =>
-                                    setShowModelDropdown(!showModelDropdown)
-                                }
-                                disabled={
-                                    loadingModels ||
-                                    availableModels.length === 0
-                                }
-                                title={settings.model || "Select a model"}
+                        <div className="selectors-group">
+                            <div
+                                className="inline-model-selector"
+                                ref={modelDropdownRef}
                             >
-                                <span className="model-name">
-                                    {loadingModels
-                                        ? "..."
-                                        : getShortModelName(settings.model)}
-                                </span>
-                                <IoChevronDown size={14} />
-                            </button>
+                                <button
+                                    className="model-trigger-btn"
+                                    onClick={() =>
+                                        setShowModelDropdown(!showModelDropdown)
+                                    }
+                                    disabled={
+                                        loadingModels ||
+                                        availableModels.length === 0
+                                    }
+                                    title={settings.model || "Select a model"}
+                                >
+                                    <span className="model-name">
+                                        {loadingModels
+                                            ? "..."
+                                            : getShortModelName(settings.model)}
+                                    </span>
+                                    <IoChevronDown size={14} />
+                                </button>
 
-                            {showModelDropdown && (
-                                <div className="model-dropdown-menu">
-                                    <div className="model-search-wrapper">
-                                        <input
-                                            type="text"
-                                            className="model-search-input"
-                                            placeholder="Search models..."
-                                            value={modelSearchQuery}
-                                            onChange={(e) =>
-                                                setModelSearchQuery(
-                                                    e.target.value
-                                                )
-                                            }
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="model-list">
-                                        {filteredModels.length === 0 ? (
-                                            <div className="model-item no-results">
-                                                No models found
-                                            </div>
-                                        ) : (
-                                            filteredModels.map((model) => (
-                                                <div
-                                                    key={model.id}
-                                                    className={`model-item ${
-                                                        model.id ===
-                                                        settings.model
-                                                            ? "active"
-                                                            : ""
-                                                    }`}
-                                                    onClick={() =>
-                                                        handleModelSelect(
-                                                            model.id
-                                                        )
-                                                    }
-                                                >
-                                                    {model.id}
+                                {showModelDropdown && (
+                                    <div className="model-dropdown-menu">
+                                        <div className="model-search-wrapper">
+                                            <input
+                                                type="text"
+                                                className="model-search-input"
+                                                placeholder="Search models..."
+                                                value={modelSearchQuery}
+                                                onChange={(e) =>
+                                                    setModelSearchQuery(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div className="model-list">
+                                            {filteredModels.length === 0 ? (
+                                                <div className="model-item no-results">
+                                                    No models found
                                                 </div>
-                                            ))
-                                        )}
+                                            ) : (
+                                                filteredModels.map((model) => (
+                                                    <div
+                                                        key={model.id}
+                                                        className={`model-item ${
+                                                            model.id ===
+                                                            settings.model
+                                                                ? "active"
+                                                                : ""
+                                                        }`}
+                                                        onClick={() =>
+                                                            handleModelSelect(
+                                                                model.id
+                                                            )
+                                                        }
+                                                    >
+                                                        {model.id}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+
+                            {contextStrategy ===
+                                CONTEXT_STRATEGIES.SUMMARIZATION &&
+                                summarizationMode === "manual" &&
+                                conversation.messages.length > 0 && (
+                                    <button
+                                        className="summarize-quick-btn"
+                                        onClick={handleSummarizeConversation}
+                                        title="Summarize conversation"
+                                    >
+                                        ✨
+                                    </button>
+                                )}
+
+                            <button
+                                className="context-settings-btn"
+                                onClick={() => setShowContextSettings(true)}
+                                title="Context management settings"
+                            >
+                                <IoSettingsOutline size={18} />
+                            </button>
                         </div>
 
                         <input
@@ -826,18 +1085,73 @@ function ChatArea({
                 </div>
 
                 <div className="token-counter">
-                    {tokenCount > settings.maxTokens * 0.8 && (
+                    {tokenCount >
+                        (settings.maxTokens - systemMessageTokens) * 0.8 && (
                         <span className="token-warning">⚠️</span>
                     )}
+                    {systemMessageTokens > 0 && (
+                        <>
+                            <span
+                                className={`token-count token-${getTokenColor(
+                                    getTokenPercentage(
+                                        systemMessageTokens,
+                                        settings.maxTokens
+                                    )
+                                )}`}
+                                title="System message token count (configured in Settings)"
+                            >
+                                System: {systemMessageTokens.toLocaleString()} /{" "}
+                                {settings.maxTokens.toLocaleString()} tokens (
+                                {getTokenPercentage(
+                                    systemMessageTokens,
+                                    settings.maxTokens
+                                )}
+                                %)
+                            </span>
+                            <span className="token-separator">|</span>
+                        </>
+                    )}
                     <span
-                        className="token-count"
-                        title="Go to settings to change the token limit"
+                        className={`token-count token-${getTokenColor(
+                            getTokenPercentage(
+                                tokenCount,
+                                settings.maxTokens - systemMessageTokens
+                            )
+                        )}`}
+                        title="Input and attachments token count (available after system message)"
                     >
-                        {tokenCount.toLocaleString()} out of{" "}
-                        {settings.maxTokens.toLocaleString()} tokens used (
-                        {Math.round((tokenCount / settings.maxTokens) * 100)}%)
-                        (Max available: {getMaxContextTokens().toLocaleString()}{" "}
-                        tokens)
+                        Input: {tokenCount.toLocaleString()} /{" "}
+                        {(
+                            settings.maxTokens - systemMessageTokens
+                        ).toLocaleString()}{" "}
+                        tokens (
+                        {getTokenPercentage(
+                            tokenCount,
+                            settings.maxTokens - systemMessageTokens
+                        )} (limit)
+                        %)
+                    </span>
+                    <span className="token-separator">|</span>
+                    <span
+                        className={`token-count token-${getTokenColor(
+                            getTokenPercentage(
+                                historyTokenCount,
+                                settings.maxTokens
+                            )
+                        )}`}
+                        title="Conversation history token count"
+                    >
+                        Context: {historyTokenCount.toLocaleString()} /{" "}
+                        {settings.maxTokens.toLocaleString()} tokens (
+                        {getTokenPercentage(
+                            historyTokenCount,
+                            settings.maxTokens
+                        )}
+                        %)
+                    </span>
+                    <span className="token-separator">|</span>
+                    <span className="token-info">
+                        Max: {getMaxContextTokens().toLocaleString()} tokens
                     </span>
                 </div>
             </div>
@@ -884,6 +1198,36 @@ function ChatArea({
                         </div>
                     </div>
                 </div>
+            )}
+
+            <ContextSettingsModal
+                show={showContextSettings}
+                onClose={() => setShowContextSettings(false)}
+                contextStrategy={contextStrategy}
+                onStrategyChange={handleStrategyChange}
+                windowSize={windowSize}
+                onWindowSizeChange={handleWindowSizeChange}
+                totalMessages={conversation?.messages.length || 0}
+                onOpenMessageSelector={() => setShowMessageSelector(true)}
+                selectedMessageCount={selectedMessageIds.length}
+                onSummarize={handleSummarizeConversation}
+                summarizationMode={summarizationMode}
+                onSummarizationModeChange={handleSummarizationModeChange}
+                historyTokenCount={historyTokenCount}
+                maxTokens={settings.maxTokens}
+                getTokenPercentage={getTokenPercentage}
+                getTokenColor={getTokenColor}
+            />
+
+            {showMessageSelector && conversation && (
+                <MessageSelector
+                    messages={conversation.messages}
+                    maxTokens={settings.maxTokens}
+                    selectedMessageIds={selectedMessageIds}
+                    onSelectionChange={setSelectedMessageIds}
+                    onClose={() => setShowMessageSelector(false)}
+                    onApply={() => setShowMessageSelector(false)}
+                />
             )}
         </div>
     );

@@ -820,7 +820,7 @@
 
 .scroll-down-btn {
     position: fixed;
-    bottom: 100px;
+    bottom: 115px;
     right: 20px;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -858,6 +858,120 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
 }
 
+.context-warning-banner {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    animation: slideDown 0.3s ease;
+    z-index: 10;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.context-warning-banner span {
+    flex: 1;
+}
+
+.dismiss-warning-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    border-radius: 6px;
+    padding: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s ease;
+}
+
+.dismiss-warning-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.selectors-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.context-settings-btn {
+    padding: 6px 12px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.context-settings-btn:hover {
+    background: var(--hover-bg);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.context-settings-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.summarize-quick-btn {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border: 1px solid #d97706;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.summarize-quick-btn:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+}
+
+.summarize-quick-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.token-separator {
+    color: var(--text-secondary);
+    margin: 0 8px;
+}
+
+.token-info {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
 @media (max-width: 768px) {
     .input-wrapper {
         padding: 0 20px;
@@ -869,23 +983,47 @@
 
     .token-counter {
         padding: 8px 20px 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
     }
 
-    .model-trigger-btn {
+    .token-separator {
+        display: none;
+    }
+
+    .model-trigger-btn,
+    .strategy-trigger-btn {
         max-width: 100px;
         font-size: 11px;
         padding: 5px 8px;
     }
 
-    .model-name {
+    .model-name,
+    .strategy-name {
         max-width: 70px;
     }
 
-    .model-dropdown-menu {
+    .model-dropdown-menu,
+    .strategy-dropdown-menu {
         min-width: 240px;
     }
 
     .attached-file-chip {
         max-width: 100%;
+    }
+
+    .selectors-group {
+        gap: 4px;
+    }
+
+    .context-settings-btn,
+    .summarize-quick-btn {
+        padding: 5px 10px;
+    }
+
+    .context-warning-banner {
+        font-size: 12px;
+        padding: 10px 15px;
     }
 }

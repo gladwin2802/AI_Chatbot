@@ -1,115 +1,154 @@
-import { useState, useEffect } from 'react'
-import Sidebar from './components/Sidebar'
-import ChatArea from './components/ChatArea'
-import Settings from './components/Settings'
-import { loadConversations, saveConversations, loadSettings, loadTheme, saveTheme } from './utils/storage'
-import './styles/App.css'
+import { useState, useEffect } from "react";
+import Sidebar from "./components/Sidebar";
+import ChatArea from "./components/ChatArea";
+import Settings from "./components/Settings";
+import {
+    loadConversations,
+    saveConversations,
+    loadSettings,
+    loadTheme,
+    saveTheme,
+} from "./utils/storage";
+import "./styles/App.css";
 
 function App() {
-  const [conversations, setConversations] = useState([])
-  const [currentConversationId, setCurrentConversationId] = useState(null)
-  const [showSettings, setShowSettings] = useState(false)
-  const [settings, setSettings] = useState(loadSettings())
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [theme, setTheme] = useState(loadTheme())
+    const [conversations, setConversations] = useState([]);
+    const [currentConversationId, setCurrentConversationId] = useState(null);
+    const [showSettings, setShowSettings] = useState(false);
+    const [settings, setSettings] = useState(loadSettings());
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [theme, setTheme] = useState(loadTheme());
+    const [isConfigured, setIsConfigured] = useState(false);
 
-  useEffect(() => {
-    const loaded = loadConversations()
-    setConversations(loaded)
-    if (loaded.length === 0) {
-      createNewConversation()
-    } else {
-      setCurrentConversationId(loaded[0].id)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (conversations.length > 0) {
-      saveConversations(conversations)
-    }
-  }, [conversations])
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    saveTheme(theme)
-  }, [theme])
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
-  }
-  
-  const createNewConversation = () => {
-    const newConv = {
-      id: Date.now().toString(),
-      title: 'New Chat',
-      messages: [],
-      createdAt: new Date().toISOString()
-    }
-    setConversations(prev => [newConv, ...prev])
-    setCurrentConversationId(newConv.id)
-  }
-
-  const deleteConversation = (id) => {
-    setConversations(prev => {
-      const filtered = prev.filter(c => c.id !== id)
-      if (currentConversationId === id) {
-        if (filtered.length > 0) {
-          setCurrentConversationId(filtered[0].id)
-        } else {
-          createNewConversation()
+    useEffect(() => {
+        const loadedSettings = loadSettings();
+        const configured = loadedSettings.baseUrl && loadedSettings.apiKey;
+        setIsConfigured(configured);
+        if (!configured) {
+            setShowSettings(true);
         }
-      }
-      return filtered
-    })
-  }
+    }, []);
 
-  const updateConversation = (id, updates) => {
-    setConversations(prev =>
-      prev.map(conv =>
-        conv.id === id ? { ...conv, ...updates } : conv
-      )
-    )
-  }
+    useEffect(() => {
+        const loaded = loadConversations();
+        setConversations(loaded);
+        if (loaded.length === 0) {
+            createNewConversation();
+        } else {
+            setCurrentConversationId(loaded[0].id);
+        }
+    }, []);
 
-  const currentConversation = conversations.find(c => c.id === currentConversationId)
+    useEffect(() => {
+        if (conversations.length > 0) {
+            saveConversations(conversations);
+        }
+    }, [conversations]);
 
-  return (
-    <div className="app">
-      <Sidebar
-        conversations={conversations}
-        currentConversationId={currentConversationId}
-        onSelectConversation={setCurrentConversationId}
-        onNewConversation={createNewConversation}
-        onDeleteConversation={deleteConversation}
-        onUpdateConversation={updateConversation}
-        onOpenSettings={() => setShowSettings(true)}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
-      
-      <ChatArea
-        conversation={currentConversation}
-        onUpdateConversation={updateConversation}
-        settings={settings}
-        onUpdateSettings={setSettings}
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+    useEffect(() => {
+        document.documentElement.setAttribute("data-theme", theme);
+        saveTheme(theme);
+    }, [theme]);
 
-      {showSettings && (
-        <Settings
-          settings={settings}
-          onClose={() => setShowSettings(false)}
-          onSave={(newSettings) => {
-            setSettings(newSettings)
-            setShowSettings(false)
-          }}
-        />
-      )}
-    </div>
-  )
+    const toggleTheme = () => {
+        setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    };
+
+    const createNewConversation = () => {
+        const newConv = {
+            id: Date.now().toString(),
+            title: "New Chat",
+            messages: [],
+            createdAt: new Date().toISOString(),
+        };
+        setConversations((prev) => [newConv, ...prev]);
+        setCurrentConversationId(newConv.id);
+    };
+
+    const deleteConversation = (id) => {
+        setConversations((prev) => {
+            const filtered = prev.filter((c) => c.id !== id);
+            if (currentConversationId === id) {
+                if (filtered.length > 0) {
+                    setCurrentConversationId(filtered[0].id);
+                } else {
+                    createNewConversation();
+                }
+            }
+            return filtered;
+        });
+    };
+
+    const updateConversation = (id, updates) => {
+        setConversations((prev) =>
+            prev.map((conv) =>
+                conv.id === id ? { ...conv, ...updates } : conv
+            )
+        );
+    };
+
+    const currentConversation = conversations.find(
+        (c) => c.id === currentConversationId
+    );
+
+    return (
+        <div className="app" data-theme={theme}>
+            {!isConfigured ? (
+                <div className="setup-screen">
+                    <div className="setup-content">
+                        <h1>Welcome to AI Chatbot</h1>
+                        <p>Configure your API settings to get started</p>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <Sidebar
+                        conversations={conversations}
+                        currentConversationId={currentConversationId}
+                        onSelectConversation={setCurrentConversationId}
+                        onNewConversation={createNewConversation}
+                        onDeleteConversation={deleteConversation}
+                        onUpdateConversation={updateConversation}
+                        onOpenSettings={() => setShowSettings(true)}
+                        isOpen={sidebarOpen}
+                        onToggle={() => setSidebarOpen(!sidebarOpen)}
+                    />
+
+                    <ChatArea
+                        conversation={currentConversation}
+                        onUpdateConversation={updateConversation}
+                        settings={settings}
+                        onUpdateSettings={setSettings}
+                        sidebarOpen={sidebarOpen}
+                        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                        theme={theme}
+                        onToggleTheme={toggleTheme}
+                    />
+                </>
+            )}
+
+            {showSettings && (
+                <Settings
+                    settings={settings}
+                    onClose={() => {
+                        if (isConfigured) {
+                            setShowSettings(false);
+                        }
+                    }}
+                    onSave={(newSettings) => {
+                        setSettings(newSettings);
+                        const configured =
+                            newSettings.baseUrl && newSettings.apiKey;
+                        setIsConfigured(configured);
+                        if (configured) {
+                            setShowSettings(false);
+                        }
+                    }}
+                    isRequired={!isConfigured}
+                />
+            )}
+        </div>
+    );
 }
 
-export default App
+export default App;

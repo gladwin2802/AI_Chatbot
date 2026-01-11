@@ -1,23 +1,44 @@
-import { useState, useEffect } from "react";
-import { IoClose } from "react-icons/io5";
+import { useState, useEffect, useRef } from "react";
+import { IoClose, IoChevronDown } from "react-icons/io5";
 import { saveSettings } from "../utils/storage";
 import { fetchAvailableModels } from "../utils/openai";
 import "../styles/Settings.css";
 
-function Settings({ settings, onClose, onSave }) {
+function Settings({ settings, onClose, onSave, isRequired = false }) {
     const [formData, setFormData] = useState({
         baseUrl: settings.baseUrl || "",
         apiKey: settings.apiKey || "",
         model: settings.model || "",
         temperature: settings.temperature || 0.7,
         maxTokens: settings.maxTokens || 2000,
+        systemMessage: settings.systemMessage || "",
     });
 
     const [availableModels, setAvailableModels] = useState([]);
     const [loadingModels, setLoadingModels] = useState(false);
     const [modelsError, setModelsError] = useState(null);
+    const [showModelDropdown, setShowModelDropdown] = useState(false);
+    const [modelSearchQuery, setModelSearchQuery] = useState("");
+    const modelDropdownRef = useRef(null);
 
     const currentModel = availableModels.find((m) => m.id === formData.model);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                modelDropdownRef.current &&
+                !modelDropdownRef.current.contains(event.target)
+            ) {
+                setShowModelDropdown(false);
+                setModelSearchQuery("");
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         const loadModels = async () => {
@@ -84,43 +105,74 @@ function Settings({ settings, onClose, onSave }) {
         }
     }, [formData.model]);
 
-    const handleModelChange = (e) => {
-        const newModelId = e.target.value;
-        const model = availableModels.find((m) => m.id === newModelId);
+    const handleModelSelect = (modelId) => {
+        const model = availableModels.find((m) => m.id === modelId);
         const maxOutput = getMaxOutputTokens(model);
 
         setFormData({
             ...formData,
-            model: newModelId,
+            model: modelId,
             maxTokens: Math.min(formData.maxTokens, maxOutput),
         });
+        setShowModelDropdown(false);
+        setModelSearchQuery("");
+    };
+
+    const filteredModels = availableModels.filter((model) =>
+        model.id.toLowerCase().includes(modelSearchQuery.toLowerCase())
+    );
+
+    const getShortModelName = (modelId) => {
+        if (!modelId) return "Select model";
+        const parts = modelId.split("/");
+        return parts[parts.length - 1];
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        if (isRequired && (!formData.baseUrl || !formData.apiKey)) {
+            alert("Please enter both Base URL and API Key to continue.");
+            return;
+        }
+        
         saveSettings(formData);
         onSave(formData);
     };
 
+    const handleClose = () => {
+        if (!isRequired) {
+            onClose();
+        }
+    };
+
     return (
-        <div className="settings-overlay" onClick={onClose}>
+        <div className="settings-overlay" onClick={handleClose}>
             <div
                 className="settings-modal"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="settings-header">
-                    <h2>Settings</h2>
-                    <button
-                        className="close-btn"
-                        onClick={onClose}
-                        title="Close settings"
-                    >
-                        <IoClose size={24} />
-                    </button>
+                    <h2>{isRequired ? "Setup Required" : "Settings"}</h2>
+                    {!isRequired && (
+                        <button
+                            className="close-btn"
+                            onClick={onClose}
+                            title="Close settings"
+                        >
+                            <IoClose size={24} />
+                        </button>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit}>
                     <div className="settings-content">
+                        {isRequired && (
+                            <div className="setup-message">
+                                Please configure your Base URL and API Key to get
+                                started.
+                            </div>
+                        )}
                         <div className="form-group">
                             <label>Base URL</label>
                             <input
@@ -158,31 +210,79 @@ function Settings({ settings, onClose, onSave }) {
 
                         <div className="form-group">
                             <label>Model</label>
-                            <select
-                                value={formData.model}
-                                onChange={handleModelChange}
-                                disabled={
-                                    loadingModels ||
-                                    availableModels.length === 0
-                                }
+                            <div 
+                                className="settings-model-selector"
+                                ref={modelDropdownRef}
                             >
-                                {loadingModels && (
-                                    <option value="">Loading models...</option>
-                                )}
-                                {!loadingModels &&
-                                    availableModels.length === 0 && (
-                                        <option value="">
-                                            {modelsError
+                                <button
+                                    type="button"
+                                    className="settings-model-trigger-btn"
+                                    onClick={() =>
+                                        setShowModelDropdown(!showModelDropdown)
+                                    }
+                                    disabled={
+                                        loadingModels ||
+                                        availableModels.length === 0
+                                    }
+                                    title={formData.model || "Select a model"}
+                                >
+                                    <span className="model-name">
+                                        {loadingModels
+                                            ? "Loading models..."
+                                            : availableModels.length === 0
+                                            ? modelsError
                                                 ? "Failed to load models"
-                                                : "Enter Base URL first"}
-                                        </option>
-                                    )}
-                                {availableModels.map((model) => (
-                                    <option key={model.id} value={model.id}>
-                                        {model.id}
-                                    </option>
-                                ))}
-                            </select>
+                                                : "Enter Base URL first"
+                                            : getShortModelName(formData.model)}
+                                    </span>
+                                    <IoChevronDown size={16} />
+                                </button>
+
+                                {showModelDropdown && (
+                                    <div className="settings-model-dropdown-menu">
+                                        <div className="model-search-wrapper">
+                                            <input
+                                                type="text"
+                                                className="model-search-input"
+                                                placeholder="Search models..."
+                                                value={modelSearchQuery}
+                                                onChange={(e) =>
+                                                    setModelSearchQuery(
+                                                        e.target.value
+                                                    )
+                                                }
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div className="model-list">
+                                            {filteredModels.length === 0 ? (
+                                                <div className="model-item no-results">
+                                                    No models found
+                                                </div>
+                                            ) : (
+                                                filteredModels.map((model) => (
+                                                    <div
+                                                        key={model.id}
+                                                        className={`model-item ${
+                                                            model.id ===
+                                                            formData.model
+                                                                ? "active"
+                                                                : ""
+                                                        }`}
+                                                        onClick={() =>
+                                                            handleModelSelect(
+                                                                model.id
+                                                            )
+                                                        }
+                                                    >
+                                                        {model.id}
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                             {modelsError && (
                                 <div className="form-error">{modelsError}</div>
                             )}
@@ -288,18 +388,39 @@ function Settings({ settings, onClose, onSave }) {
                                     </div>
                                 )}
                         </div>
+
+                        <div className="form-group">
+                            <label>System Message (Optional)</label>
+                            <textarea
+                                className="system-message-textarea"
+                                value={formData.systemMessage}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        systemMessage: e.target.value,
+                                    })
+                                }
+                                placeholder="Enter a system message to guide AI behavior (e.g., 'You are a helpful assistant...')"
+                                rows={3}
+                            />
+                            <div className="form-help">
+                                This message will be included in all conversations regardless of context strategy
+                            </div>
+                        </div>
                     </div>
 
                     <div className="settings-footer">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="cancel-btn"
-                        >
-                            Cancel
-                        </button>
+                        {!isRequired && (
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="cancel-btn"
+                            >
+                                Cancel
+                            </button>
+                        )}
                         <button type="submit" className="save-btn">
-                            Save
+                            {isRequired ? "Get Started" : "Save"}
                         </button>
                     </div>
                 </form>

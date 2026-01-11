@@ -1,4 +1,4 @@
-export const sendMessageToOpenAI = async (messages, settings) => {
+export const sendMessageToOpenAI = async (apiMessages, settings) => {
     const { baseUrl, apiKey, model, temperature, maxTokens } = settings;
 
     if (!baseUrl) {
@@ -6,14 +6,6 @@ export const sendMessageToOpenAI = async (messages, settings) => {
             "Base URL is not configured. Please set it in settings."
         );
     }
-
-    const lastMessage = messages[messages.length - 1];
-    const apiMessages = [
-        {
-            role: lastMessage.role,
-            content: lastMessage.content,
-        },
-    ];
 
     const isDevelopment = import.meta.env.DEV;
     let apiEndpoint;
