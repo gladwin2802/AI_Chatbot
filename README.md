@@ -2,6 +2,10 @@
 
 A modern, feature-rich chatbot interface that works with any OpenAI-compatible API. Chat with AI models while having full control over your conversations and context management.
 
+## Live Demo
+
+Check out the live demo: [https://chatbyai.netlify.app/](https://chatbyai.netlify.app/)
+
 ## What Can You Do?
 
 ### Have Conversations Your Way
