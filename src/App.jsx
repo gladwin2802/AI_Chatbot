@@ -72,7 +72,14 @@ function App() {
                 if (filtered.length > 0) {
                     setCurrentConversationId(filtered[0].id);
                 } else {
-                    createNewConversation();
+                    const newConv = {
+                        id: Date.now().toString(),
+                        title: "New Chat",
+                        messages: [],
+                        createdAt: new Date().toISOString(),
+                    };
+                    setCurrentConversationId(newConv.id);
+                    return [newConv];
                 }
             }
             return filtered;
