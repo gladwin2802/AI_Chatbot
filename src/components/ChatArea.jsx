@@ -51,7 +51,8 @@ function ChatArea({
     theme,
     onToggleTheme,
 }) {
-    const maxContextTokens = settings.maxContextTokens || 100000;
+    const getMaxContextTokensValue = () => settings.maxContextTokens || 100000;
+    
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -150,21 +151,21 @@ function ChatArea({
 
             const percentage = getTokenPercentage(
                 totalHistoryTokens,
-                maxContextTokens
+                getMaxContextTokensValue()
             );
             setShowContextWarning(percentage >= 80);
 
             if (contextStrategy === CONTEXT_STRATEGIES.FULL_HISTORY) {
                 const recentIds = selectRecentMessagesWithinLimit(
                     conversation.messages,
-                    maxContextTokens
+                    getMaxContextTokensValue()
                 );
                 setSelectedMessageIds(recentIds);
             }
         }
     }, [
         conversation?.messages,
-        maxContextTokens,
+        settings.maxContextTokens,
         contextStrategy,
         windowSize,
         selectedMessageIds.length,
@@ -245,7 +246,7 @@ function ChatArea({
         if (newStrategy === CONTEXT_STRATEGIES.FULL_HISTORY && conversation) {
             const recentIds = selectRecentMessagesWithinLimit(
                 conversation.messages,
-                maxContextTokens
+                getMaxContextTokensValue()
             );
             setSelectedMessageIds(recentIds);
         }
@@ -322,7 +323,7 @@ function ChatArea({
     const handleFileSelect = async (e) => {
         const files = Array.from(e.target.files);
 
-        const usableTokens = maxContextTokens - systemMessageTokens;
+        const usableTokens = getMaxContextTokensValue() - systemMessageTokens;
         if (tokenCount >= usableTokens) {
             alert(
                 `Cannot attach files: Input token limit reached.\n\n` +
@@ -355,7 +356,7 @@ function ChatArea({
             ".css",
         ];
 
-        const maxContextTokens = getMaxContextTokens();
+        const maxContextLimit = getMaxContextTokens();
 
         for (const file of files) {
             const fileExtension = file.name
@@ -379,11 +380,11 @@ function ChatArea({
                 const fileTokens = estimateTokenCount(content);
                 const currentTokens = tokenCount;
 
-                if (currentTokens + fileTokens > maxContextTokens) {
+                if (currentTokens + fileTokens > maxContextLimit) {
                     alert(
                         `Adding "${
                             file.name
-                        }" would exceed token limit (${maxContextTokens.toLocaleString()} tokens). Cannot attach more files.`
+                        }" would exceed token limit (${maxContextLimit.toLocaleString()} tokens). Cannot attach more files.`
                     );
                     continue;
                 }
@@ -520,7 +521,7 @@ function ChatArea({
     const handleSend = async () => {
         if (!input.trim() || !conversation || isLoading) return;
 
-        const usableTokens = maxContextTokens - systemMessageTokens;
+        const usableTokens = getMaxContextTokensValue() - systemMessageTokens;
         if (tokenCount > usableTokens) {
             alert(
                 `Cannot send message: Input token limit exceeded.\n\n` +
@@ -630,9 +631,9 @@ function ChatArea({
             return total + Math.ceil(msg.content.length / 4);
         }, 0);
 
-        if (totalApiTokens > maxContextTokens) {
+        if (totalApiTokens > getMaxContextTokensValue()) {
             alert(
-                `Cannot send message: Total context (${totalApiTokens.toLocaleString()} tokens) exceeds limit (${maxContextTokens.toLocaleString()} tokens).\n\n` +
+                `Cannot send message: Total context (${totalApiTokens.toLocaleString()} tokens) exceeds limit (${getMaxContextTokensValue().toLocaleString()} tokens).\n\n` +
                     `Please try:\n` +
                     `• Switch to a different context strategy (e.g., Sliding Window or Summarization)\n` +
                     `• Reduce window size or deselect some messages\n` +
@@ -849,7 +850,7 @@ function ChatArea({
                         Context limit approaching (
                         {getTokenPercentage(
                             historyTokenCount,
-                            maxContextTokens
+                            getMaxContextTokensValue()
                         )}
                         %). Consider using a different context strategy.
                     </span>
@@ -1055,10 +1056,10 @@ function ChatArea({
                             className="attach-file-btn"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={
-                                isLoading || tokenCount >= maxContextTokens
+                                isLoading || tokenCount >= getMaxContextTokensValue()
                             }
                             title={
-                                tokenCount >= maxContextTokens
+                                tokenCount >= getMaxContextTokensValue()
                                     ? "Token limit exceeded"
                                     : "Attach text files"
                             }
@@ -1072,13 +1073,13 @@ function ChatArea({
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={
-                                tokenCount >= maxContextTokens
+                                tokenCount >= getMaxContextTokensValue()
                                     ? "Token limit exceeded..."
                                     : "Send a message..."
                             }
                             rows={1}
                             disabled={
-                                isLoading || tokenCount > maxContextTokens
+                                isLoading || tokenCount > getMaxContextTokensValue()
                             }
                         />
                         <button
@@ -1086,11 +1087,11 @@ function ChatArea({
                             disabled={
                                 !input.trim() ||
                                 isLoading ||
-                                tokenCount > maxContextTokens
+                                tokenCount > getMaxContextTokensValue()
                             }
                             className="send-btn"
                             title={
-                                tokenCount > maxContextTokens
+                                tokenCount > getMaxContextTokensValue()
                                     ? "Token limit exceeded"
                                     : "Send message"
                             }
@@ -1102,7 +1103,7 @@ function ChatArea({
 
                 <div className="token-counter">
                     {tokenCount >
-                        (maxContextTokens - systemMessageTokens) * 0.8 && (
+                        (getMaxContextTokensValue() - systemMessageTokens) * 0.8 && (
                         <span className="token-warning">⚠️</span>
                     )}
                     {systemMessageTokens > 0 && (
@@ -1111,16 +1112,16 @@ function ChatArea({
                                 className={`token-count token-${getTokenColor(
                                     getTokenPercentage(
                                         systemMessageTokens,
-                                        maxContextTokens
+                                        getMaxContextTokensValue()
                                     )
                                 )}`}
                                 title="System message token count (configured in Settings)"
                             >
                                 System: {systemMessageTokens.toLocaleString()} /{" "}
-                                {maxContextTokens.toLocaleString()} tokens (
+                                {getMaxContextTokensValue().toLocaleString()} tokens (
                                 {getTokenPercentage(
                                     systemMessageTokens,
-                                    maxContextTokens
+                                    getMaxContextTokensValue()
                                 )}
                                 %)
                             </span>
@@ -1131,17 +1132,17 @@ function ChatArea({
                         className={`token-count token-${getTokenColor(
                             getTokenPercentage(
                                 tokenCount,
-                                maxContextTokens
+                                getMaxContextTokensValue()
                             )
                         )}`}
                         title="Current message and attachments token count"
                     >
                         Input: {tokenCount.toLocaleString()} /{" "}
-                        {maxContextTokens.toLocaleString()}{" "}
+                        {getMaxContextTokensValue().toLocaleString()}{" "}
                         tokens (
                         {getTokenPercentage(
                             tokenCount,
-                            maxContextTokens
+                            getMaxContextTokensValue()
                         )}
                         %)
                     </span>
@@ -1150,16 +1151,16 @@ function ChatArea({
                         className={`token-count token-${getTokenColor(
                             getTokenPercentage(
                                 historyTokenCount,
-                                maxContextTokens
+                                getMaxContextTokensValue()
                             )
                         )}`}
                         title="Conversation history token limit (configured in Settings)"
                     >
                         Context: {historyTokenCount.toLocaleString()} /{" "}
-                        {maxContextTokens.toLocaleString()} tokens (
+                        {getMaxContextTokensValue().toLocaleString()} tokens (
                         {getTokenPercentage(
                             historyTokenCount,
-                            maxContextTokens
+                            getMaxContextTokensValue()
                         )}
                         %)
                     </span>
@@ -1228,7 +1229,7 @@ function ChatArea({
                 summarizationMode={summarizationMode}
                 onSummarizationModeChange={handleSummarizationModeChange}
                 historyTokenCount={historyTokenCount}
-                maxContextTokens={maxContextTokens}
+                maxContextTokens={getMaxContextTokensValue()}
                 getTokenPercentage={getTokenPercentage}
                 getTokenColor={getTokenColor}
             />
@@ -1236,7 +1237,7 @@ function ChatArea({
             {showMessageSelector && conversation && (
                 <MessageSelector
                     messages={conversation.messages}
-                    maxTokens={maxContextTokens}
+                    maxTokens={getMaxContextTokensValue()}
                     selectedMessageIds={selectedMessageIds}
                     onSelectionChange={setSelectedMessageIds}
                     onClose={() => setShowMessageSelector(false)}
