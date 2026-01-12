@@ -128,7 +128,7 @@ function ChatArea({
             let totalHistoryTokens;
 
             if (contextStrategy === CONTEXT_STRATEGIES.LAST_MESSAGE) {
-                totalHistoryTokens = systemMessageTokens + tokenCount;
+                totalHistoryTokens = 0;
             } else if (contextStrategy === CONTEXT_STRATEGIES.SLIDING_WINDOW) {
                 const recentMessages = conversation.messages.slice(-windowSize);
                 totalHistoryTokens = calculateTotalTokens(recentMessages);
@@ -168,9 +168,13 @@ function ChatArea({
         contextStrategy,
         windowSize,
         selectedMessageIds.length,
-        systemMessageTokens,
-        tokenCount
     ]);
+
+    useEffect(() => {
+        if (contextStrategy === CONTEXT_STRATEGIES.LAST_MESSAGE) {
+            setHistoryTokenCount(systemMessageTokens + tokenCount);
+        }
+    }, [contextStrategy, systemMessageTokens, tokenCount]);
 
     useEffect(() => {
         saveContextStrategy(contextStrategy);
