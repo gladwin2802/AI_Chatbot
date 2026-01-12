@@ -42,6 +42,7 @@ export const loadSettings = () => {
             model: "",
             temperature: 0.7,
             maxTokens: 2000,
+            maxContextTokens: 100000,
             systemMessage: "",
         };
     } catch (error) {
@@ -52,6 +53,7 @@ export const loadSettings = () => {
             model: "",
             temperature: 0.7,
             maxTokens: 2000,
+            maxContextTokens: 100000,
             systemMessage: "",
         };
     }

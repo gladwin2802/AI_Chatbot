@@ -11,6 +11,7 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
         model: settings.model || "",
         temperature: settings.temperature || 0.7,
         maxTokens: settings.maxTokens || 2000,
+        maxContextTokens: settings.maxContextTokens || 100000,
         systemMessage: settings.systemMessage || "",
     });
 
@@ -95,12 +96,24 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
         return 32000;
     };
 
+    const getMaxContextTokens = (model) => {
+        if (!model) return 100000;
+
+        if (model.context_length && model.context_length > 0) {
+            return model.context_length;
+        }
+
+        return 100000;
+    };
+
     useEffect(() => {
         if (currentModel) {
             const maxOutput = getMaxOutputTokens(currentModel);
+            const maxContext = getMaxContextTokens(currentModel);
             setFormData((prev) => ({
                 ...prev,
                 maxTokens: Math.min(prev.maxTokens, maxOutput),
+                maxContextTokens: Math.min(prev.maxContextTokens, maxContext),
             }));
         }
     }, [formData.model]);
@@ -108,11 +121,13 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
     const handleModelSelect = (modelId) => {
         const model = availableModels.find((m) => m.id === modelId);
         const maxOutput = getMaxOutputTokens(model);
+        const maxContext = getMaxContextTokens(model);
 
         setFormData({
             ...formData,
             model: modelId,
             maxTokens: Math.min(formData.maxTokens, maxOutput),
+            maxContextTokens: Math.min(formData.maxContextTokens, maxContext),
         });
         setShowModelDropdown(false);
         setModelSearchQuery("");
@@ -184,7 +199,7 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
                                         baseUrl: e.target.value,
                                     })
                                 }
-                                placeholder="https://api.lightning.ai/v1"
+                                placeholder="https://<your-openai-compatible-endpoint>/v1"
                                 required
                             />
                             <div className="form-help">
@@ -387,6 +402,36 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
                                             : "32,000 (default)"}
                                     </div>
                                 )}
+                        </div>
+
+                        <div className="form-group">
+                            <label>
+                                Max Context Tokens: {formData.maxContextTokens.toLocaleString()}
+                            </label>
+                            <input
+                                type="range"
+                                min="1000"
+                                max={getMaxContextTokens(currentModel)}
+                                step="1000"
+                                value={formData.maxContextTokens}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        maxContextTokens: parseInt(e.target.value),
+                                    })
+                                }
+                            />
+                            <div className="range-labels">
+                                <span>1,000</span>
+                                <span>
+                                    {getMaxContextTokens(
+                                        currentModel
+                                    ).toLocaleString()}
+                                </span>
+                            </div>
+                            <div className="form-help">
+                                Maximum tokens for input context (conversation history). This is separate from output tokens.
+                            </div>
                         </div>
 
                         <div className="form-group">

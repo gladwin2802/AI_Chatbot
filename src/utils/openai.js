@@ -1,3 +1,11 @@
+const needsProxy = (baseUrl) => {
+    const isDevelopment = import.meta.env.DEV;
+    if (!isDevelopment) return false;
+    
+    const corsBlockedDomains = ['lightning.ai'];
+    return corsBlockedDomains.some(domain => baseUrl.includes(domain));
+};
+
 export const sendMessageToOpenAI = async (apiMessages, settings) => {
     const { baseUrl, apiKey, model, temperature, maxTokens } = settings;
 
@@ -7,10 +15,8 @@ export const sendMessageToOpenAI = async (apiMessages, settings) => {
         );
     }
 
-    const isDevelopment = import.meta.env.DEV;
     let apiEndpoint;
-
-    if (isDevelopment) {
+    if (needsProxy(baseUrl)) {
         apiEndpoint = "/api/v1/chat/completions";
     } else {
         apiEndpoint = baseUrl.endsWith("/")
@@ -48,10 +54,8 @@ export const fetchAvailableModels = async (baseUrl, apiKey) => {
         throw new Error("Base URL is required to fetch models");
     }
 
-    const isDevelopment = import.meta.env.DEV;
     let apiEndpoint;
-
-    if (isDevelopment) {
+    if (needsProxy(baseUrl)) {
         apiEndpoint = "/api/v1/models";
     } else {
         apiEndpoint = baseUrl.endsWith("/")

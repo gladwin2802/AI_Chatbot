@@ -84,7 +84,6 @@ function WindowSizeSelector({ windowSize, onWindowSizeChange, totalMessages }) {
                     onClick={() => setShowDropdown(!showDropdown)}
                     title={`Last ${windowSize} message${windowSize !== 1 ? 's' : ''}`}
                 >
-                    <span className="window-icon">🪟</span>
                     <span className="window-number">{windowSize}</span>
                 </button>
 

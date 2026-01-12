@@ -18,7 +18,7 @@ function ContextSettingsModal({
     summarizationMode,
     onSummarizationModeChange,
     historyTokenCount,
-    maxTokens,
+    maxContextTokens,
     getTokenPercentage,
     getTokenColor,
 }) {
@@ -82,7 +82,7 @@ function ContextSettingsModal({
                                         onClose();
                                     }}
                                 >
-                                    📋 Select Messages ({selectedMessageCount})
+                                    Select Messages ({selectedMessageCount})
                                 </button>
                             </div>
                         )}
@@ -110,7 +110,7 @@ function ContextSettingsModal({
                                         />
                                         <div className="mode-info">
                                             <span className="mode-name">
-                                                🤖 Auto-Summarization
+                                                Auto-Summarization
                                             </span>
                                             <span className="mode-description">
                                                 Automatically summarize when
@@ -134,7 +134,7 @@ function ContextSettingsModal({
                                         />
                                         <div className="mode-info">
                                             <span className="mode-name">
-                                                ✋ Manual Summarization
+                                                Manual Summarization
                                             </span>
                                             <span className="mode-description">
                                                 Click the ✨ button in the
@@ -158,12 +158,12 @@ function ContextSettingsModal({
                                     className={`status-value token-${getTokenColor(
                                         getTokenPercentage(
                                             historyTokenCount,
-                                            maxTokens
+                                            maxContextTokens
                                         )
                                     )}`}
                                 >
                                     {historyTokenCount.toLocaleString()} /{" "}
-                                    {maxTokens.toLocaleString()}
+                                    {maxContextTokens.toLocaleString()}
                                 </span>
                             </div>
                             <div className="status-item">
@@ -172,13 +172,13 @@ function ContextSettingsModal({
                                     className={`status-value token-${getTokenColor(
                                         getTokenPercentage(
                                             historyTokenCount,
-                                            maxTokens
+                                            maxContextTokens
                                         )
                                     )}`}
                                 >
                                     {getTokenPercentage(
                                         historyTokenCount,
-                                        maxTokens
+                                        maxContextTokens
                                     )}
                                     %
                                 </span>

@@ -21,27 +21,23 @@ function ContextStrategySelector({ currentStrategy, onStrategyChange }) {
     const strategies = [
         {
             id: CONTEXT_STRATEGIES.LAST_MESSAGE,
-            name: "Last Message Only",
-            description: "Send only the most recent message (minimal tokens)",
-            icon: "💬",
+            name: "Current Message Alone",
+            description: "Send only current message without history (memoryless)",
         },
         {
             id: CONTEXT_STRATEGIES.SLIDING_WINDOW,
             name: "Sliding Window",
             description: "Send last N messages (configurable window size)",
-            icon: "🪟",
         },
         {
             id: CONTEXT_STRATEGIES.FULL_HISTORY,
             name: "Full History",
             description: "Send all messages with selective control when limit reached",
-            icon: "📜",
         },
         {
             id: CONTEXT_STRATEGIES.SUMMARIZATION,
             name: "Summarization",
             description: "Summarize older messages to save tokens",
-            icon: "📝",
         },
     ];
 
@@ -54,7 +50,6 @@ function ContextStrategySelector({ currentStrategy, onStrategyChange }) {
                 onClick={() => setShowDropdown(!showDropdown)}
                 title={currentStrategyObj?.description}
             >
-                <span className="strategy-icon">{currentStrategyObj?.icon}</span>
                 <span className="strategy-name">{currentStrategyObj?.name}</span>
                 <IoChevronDown size={14} />
             </button>
@@ -77,9 +72,6 @@ function ContextStrategySelector({ currentStrategy, onStrategyChange }) {
                                 }}
                             >
                                 <div className="strategy-item-header">
-                                    <span className="strategy-item-icon">
-                                        {strategy.icon}
-                                    </span>
                                     <span className="strategy-item-name">
                                         {strategy.name}
                                     </span>

@@ -2,6 +2,7 @@
     position: relative;
     display: inline-block;
     width: 100%;
+    font-family: 'Poppins', sans-serif;
 }
 
 .strategy-trigger-btn {
@@ -14,6 +15,7 @@
     border-radius: 8px;
     cursor: pointer;
     font-size: 13px;
+    font-family: 'Poppins', sans-serif;
     transition: all 0.2s ease;
     color: var(--text-color);
     min-width: 100%;
@@ -56,6 +58,7 @@
     z-index: 1000;
     overflow: hidden;
     animation: slideDownFade 0.2s ease;
+    font-family: 'Poppins', sans-serif;
 }
 
 @keyframes slideDownFade {
