@@ -318,13 +318,13 @@ function ChatArea({
     const handleFileSelect = async (e) => {
         const files = Array.from(e.target.files);
 
-        const usableTokens = settings.maxTokens - systemMessageTokens;
+        const usableTokens = maxContextTokens - systemMessageTokens;
         if (tokenCount >= usableTokens) {
             alert(
                 `Cannot attach files: Input token limit reached.\n\n` +
                     `Current input: ${tokenCount.toLocaleString()} tokens\n` +
                     `Available: ${usableTokens.toLocaleString()} tokens (after ${systemMessageTokens.toLocaleString()} system message tokens)\n\n` +
-                    `Please remove some files or increase Max Tokens in settings.`
+                    `Please remove some files or increase Max Context Tokens in settings.`
             );
             e.target.value = "";
             return;
@@ -375,11 +375,11 @@ function ChatArea({
                 const fileTokens = estimateTokenCount(content);
                 const currentTokens = tokenCount;
 
-                if (currentTokens + fileTokens > settings.maxTokens) {
+                if (currentTokens + fileTokens > maxContextTokens) {
                     alert(
                         `Adding "${
                             file.name
-                        }" would exceed token limit (${settings.maxTokens.toLocaleString()} tokens). Cannot attach more files.`
+                        }" would exceed token limit (${maxContextTokens.toLocaleString()} tokens). Cannot attach more files.`
                     );
                     continue;
                 }
@@ -845,7 +845,7 @@ function ChatArea({
                         Context limit approaching (
                         {getTokenPercentage(
                             historyTokenCount,
-                            settings.maxTokens
+                            maxContextTokens
                         )}
                         %). Consider using a different context strategy.
                     </span>
@@ -1051,10 +1051,10 @@ function ChatArea({
                             className="attach-file-btn"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={
-                                isLoading || tokenCount >= settings.maxTokens
+                                isLoading || tokenCount >= maxContextTokens
                             }
                             title={
-                                tokenCount >= settings.maxTokens
+                                tokenCount >= maxContextTokens
                                     ? "Token limit exceeded"
                                     : "Attach text files"
                             }
@@ -1068,13 +1068,13 @@ function ChatArea({
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={
-                                tokenCount >= settings.maxTokens
+                                tokenCount >= maxContextTokens
                                     ? "Token limit exceeded..."
                                     : "Send a message..."
                             }
                             rows={1}
                             disabled={
-                                isLoading || tokenCount > settings.maxTokens
+                                isLoading || tokenCount > maxContextTokens
                             }
                         />
                         <button
@@ -1082,11 +1082,11 @@ function ChatArea({
                             disabled={
                                 !input.trim() ||
                                 isLoading ||
-                                tokenCount > settings.maxTokens
+                                tokenCount > maxContextTokens
                             }
                             className="send-btn"
                             title={
-                                tokenCount > settings.maxTokens
+                                tokenCount > maxContextTokens
                                     ? "Token limit exceeded"
                                     : "Send message"
                             }
