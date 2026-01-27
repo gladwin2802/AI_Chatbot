@@ -105,6 +105,24 @@ function Message({ message, messageId, attachedFiles = [] }) {
     }
   }
 
+  const isPureJson = (content) => {
+    const trimmed = content.trim()
+    return trimmed.startsWith('{') && trimmed.endsWith('}')
+  }
+
+  const handleDownloadJson = () => {
+    const filename = `json-${Date.now()}.json`
+    const blob = new Blob([message.content], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   useEffect(() => {
     if (message.role === 'assistant' && contentRef.current) {
       const codeBlocks = contentRef.current.querySelectorAll('pre')
@@ -125,11 +143,11 @@ function Message({ message, messageId, attachedFiles = [] }) {
         if (!buttonContainer) {
           buttonContainer = document.createElement('div')
           buttonContainer.className = 'code-actions-container'
-          
+
           copyBtn = document.createElement('button')
           copyBtn.className = 'code-copy-btn'
           copyBtn.title = 'Copy code'
-          
+
           downloadBtn = document.createElement('button')
           downloadBtn.className = 'code-download-btn'
           downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>'
@@ -143,7 +161,7 @@ function Message({ message, messageId, attachedFiles = [] }) {
         }
 
         copyBtn.onclick = () => handleCodeCopy(codeText, id)
-        
+
         if (copiedCode[id]) {
           copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'
         } else {
@@ -168,7 +186,7 @@ function Message({ message, messageId, attachedFiles = [] }) {
         copyBtn.className = 'table-copy-btn'
         copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
         copyBtn.title = 'Copy table'
-        
+
         const id = `table-${messageId}-${index}`
         copyBtn.onclick = () => handleCodeCopy(tableText, id)
 
@@ -183,7 +201,7 @@ function Message({ message, messageId, attachedFiles = [] }) {
 
   return (
     <>
-      <div 
+      <div
         id={`message-${messageId}`}
         className={`message-wrapper ${message.role} ${message.isError ? 'error' : ''}`}
       >
@@ -196,7 +214,7 @@ function Message({ message, messageId, attachedFiles = [] }) {
           <div className="message-body">
             <div className="message-content" ref={contentRef}>
               {message.role === 'assistant' ? (
-                <ReactMarkdown 
+                <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeHighlight]}
                 >
@@ -209,8 +227,8 @@ function Message({ message, messageId, attachedFiles = [] }) {
             {attachedFiles.length > 0 && (
               <div className="message-attached-files">
                 {attachedFiles.map((file, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="message-file-chip"
                     onClick={() => handleFileClick(file)}
                   >
@@ -226,13 +244,24 @@ function Message({ message, messageId, attachedFiles = [] }) {
               </div>
             )}
           </div>
-          <button 
-            className="copy-btn" 
-            onClick={handleCopy}
-            title={copied ? "Copied!" : "Copy message"}
-          >
-            {copied ? <IoCheckmark size={16} /> : <IoCopyOutline size={16} />}
-          </button>
+          <div className="message-actions">
+            {message.role === 'assistant' && isPureJson(message.content) && (
+              <button
+                className="download-btn"
+                onClick={handleDownloadJson}
+                title="Download JSON"
+              >
+                <IoDownloadOutline size={16} />
+              </button>
+            )}
+            <button
+              className="copy-btn"
+              onClick={handleCopy}
+              title={copied ? "Copied!" : "Copy message"}
+            >
+              {copied ? <IoCheckmark size={16} /> : <IoCopyOutline size={16} />}
+            </button>
+          </div>
         </div>
       </div>
 

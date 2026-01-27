@@ -285,7 +285,14 @@
     font-size: 12px;
 }
 
-.copy-btn {
+.message-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.copy-btn,
+.download-btn {
     position: sticky;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -307,63 +314,73 @@
     align-self: flex-start;
 }
 
-.message-wrapper.assistant .copy-btn {
+.message-wrapper.assistant .copy-btn,
+.message-wrapper.assistant .download-btn {
     background-color: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.3);
     color: #ffffff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.message-wrapper.user .copy-btn {
+.message-wrapper.user .copy-btn,
+.message-wrapper.user .download-btn {
     background-color: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.3);
     color: #ffffff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="light"] .message-wrapper.assistant .copy-btn {
+[data-theme="light"] .message-wrapper.assistant .copy-btn,
+[data-theme="light"] .message-wrapper.assistant .download-btn {
     background-color: rgba(0, 0, 0, 0.7);
     border-color: rgba(0, 0, 0, 0.8);
     color: #ffffff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="light"] .message-wrapper.user .copy-btn {
+[data-theme="light"] .message-wrapper.user .copy-btn,
+[data-theme="light"] .message-wrapper.user .download-btn {
     background-color: rgba(0, 0, 0, 0.7);
     border-color: rgba(0, 0, 0, 0.8);
     color: #ffffff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.message-wrapper:hover .copy-btn {
+.message-wrapper:hover .copy-btn,
+.message-wrapper:hover .download-btn {
     opacity: 1;
 }
 
-.copy-btn:hover {
+.copy-btn:hover,
+.download-btn:hover {
     background-color: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
     color: #ffffff;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-[data-theme="light"] .message-wrapper.assistant .copy-btn:hover {
+[data-theme="light"] .message-wrapper.assistant .copy-btn:hover,
+[data-theme="light"] .message-wrapper.assistant .download-btn:hover {
     background-color: rgba(0, 0, 0, 0.85);
     border-color: rgba(0, 0, 0, 0.9);
     color: #ffffff;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-.copy-btn:active {
+.copy-btn:active,
+.download-btn:active {
     transform: scale(0.95);
 }
 
-.message-wrapper.user .copy-btn:hover {
+.message-wrapper.user .copy-btn:hover,
+.message-wrapper.user .download-btn:hover {
     background-color: rgba(255, 255, 255, 0.3);
     border-color: rgba(255, 255, 255, 0.5);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-[data-theme="light"] .message-wrapper.user .copy-btn:hover {
+[data-theme="light"] .message-wrapper.user .copy-btn:hover,
+[data-theme="light"] .message-wrapper.user .download-btn:hover {
     background-color: rgba(0, 0, 0, 0.85);
     border-color: rgba(0, 0, 0, 0.9);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
