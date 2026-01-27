@@ -336,24 +336,18 @@ function ChatArea({
         }
 
         const textFileExtensions = [
-            ".txt",
-            ".json",
-            ".csv",
-            ".md",
-            ".xml",
-            ".yaml",
-            ".yml",
-            ".log",
-            ".js",
-            ".jsx",
-            ".ts",
-            ".tsx",
-            ".py",
-            ".java",
-            ".c",
-            ".cpp",
-            ".html",
-            ".css",
+            ".txt", ".json", ".csv", ".md", ".xml", ".yaml", ".yml", ".log",
+            ".js", ".jsx", ".ts", ".tsx", ".py", ".java", ".c", ".cpp", ".html", ".css",
+            ".sql", ".ipynb",
+            ".rb", ".go", ".rs", ".php", ".swift", ".kt", ".scala", ".r", ".m", ".pl", ".lua", ".vb", ".cs", ".fs", ".dart", ".elm", ".clj", ".hs", ".erl", ".ex", ".exs",
+            ".sh", ".bash", ".zsh", ".fish", ".ps1", ".bat", ".cmd",
+            ".ini", ".conf", ".config", ".properties", ".env", ".toml",
+            ".sass", ".scss", ".less", ".styl", ".vue", ".svelte",
+            ".tsv", ".rst", ".tex",
+            ".gradle", ".cmake", ".makefile", ".mk",
+            ".gitignore", ".dockerfile", ".dockerignore", ".editorconfig", ".eslintrc", ".prettierrc", ".babelrc",
+            ".h", ".hpp", ".hxx", ".cc", ".cxx",
+            ".sqlite", ".db"
         ];
 
         const maxContextLimit = getMaxContextTokens();
@@ -1048,7 +1042,7 @@ function ChatArea({
                             type="file"
                             ref={fileInputRef}
                             onChange={handleFileSelect}
-                            accept=".txt,.json,.csv,.md,.xml,.yaml,.yml,.log,.js,.jsx,.ts,.tsx,.py,.java,.c,.cpp,.html,.css"
+                            accept=".txt,.json,.csv,.md,.xml,.yaml,.yml,.log,.js,.jsx,.ts,.tsx,.py,.java,.c,.cpp,.html,.css,.sql,.ipynb,.rb,.go,.rs,.php,.swift,.kt,.scala,.r,.m,.pl,.lua,.vb,.cs,.fs,.dart,.elm,.clj,.hs,.erl,.ex,.exs,.sh,.bash,.zsh,.fish,.ps1,.bat,.cmd,.ini,.conf,.config,.properties,.env,.toml,.sass,.scss,.less,.styl,.vue,.svelte,.tsv,.rst,.tex,.gradle,.cmake,.makefile,.mk,.gitignore,.dockerfile,.dockerignore,.editorconfig,.eslintrc,.prettierrc,.babelrc,.h,.hpp,.hxx,.cc,.cxx,.sqlite,.db"
                             style={{ display: "none" }}
                             multiple
                         />
