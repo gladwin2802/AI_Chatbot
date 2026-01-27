@@ -141,6 +141,29 @@
     background-color: var(--bg-tertiary);
 }
 
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.project-settings-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.project-settings-btn:hover {
+    background-color: var(--bg-tertiary);
+}
+
 .messages-container {
     flex: 1;
     overflow-y: auto;
@@ -167,6 +190,35 @@
 
 .empty-state p {
     font-size: 15px;
+}
+
+.empty-state.instructions {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.instructions-content {
+    text-align: left;
+    margin-top: 20px;
+}
+
+.instructions-content p {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.instructions-content ol {
+    text-align: left;
+    padding-left: 24px;
+    margin: 0;
+}
+
+.instructions-content li {
+    font-size: 15px;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
 }
 
 .input-container {

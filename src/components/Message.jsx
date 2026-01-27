@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { IoChatbubblesOutline, IoCopyOutline, IoCheckmark, IoCloseCircle, IoClose, IoDocumentTextOutline } from 'react-icons/io5'
+import { IoChatbubblesOutline, IoCopyOutline, IoCheckmark, IoCloseCircle, IoClose, IoDocumentTextOutline, IoDownloadOutline } from 'react-icons/io5'
 import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import remarkGfm from 'remark-gfm'
@@ -14,6 +14,45 @@ function Message({ message, messageId, attachedFiles = [] }) {
   const [previewFile, setPreviewFile] = useState(null)
   const [copiedFile, setCopiedFile] = useState(false)
   const contentRef = useRef(null)
+
+  const getFileExtension = (language) => {
+    const extensionMap = {
+      'json': 'json',
+      'javascript': 'js',
+      'typescript': 'ts',
+      'python': 'py',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c': 'c',
+      'html': 'html',
+      'css': 'css',
+      'xml': 'xml',
+      'yaml': 'yaml',
+      'yml': 'yaml',
+      'markdown': 'md',
+      'md': 'md',
+      'sql': 'sql',
+      'bash': 'sh',
+      'shell': 'sh',
+      'text': 'txt',
+      'plaintext': 'txt'
+    }
+    return extensionMap[language?.toLowerCase()] || 'txt'
+  }
+
+  const handleDownloadCode = (code, language, index) => {
+    const extension = getFileExtension(language)
+    const filename = `file-${Date.now()}-${index}.${extension}`
+    const blob = new Blob([code], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024) return bytes + " B";
@@ -72,26 +111,44 @@ function Message({ message, messageId, attachedFiles = [] }) {
       const tables = contentRef.current.querySelectorAll('table')
 
       codeBlocks.forEach((pre, index) => {
-        if (pre.querySelector('.code-copy-btn')) return
+        let buttonContainer = pre.querySelector('.code-actions-container')
+        let copyBtn = pre.querySelector('.code-copy-btn')
+        let downloadBtn = pre.querySelector('.code-download-btn')
 
         const code = pre.querySelector('code')
         if (!code) return
 
         const codeText = code.textContent
-        const copyBtn = document.createElement('button')
-        copyBtn.className = 'code-copy-btn'
-        copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
-        copyBtn.title = 'Copy code'
-        
+        const language = code.className.match(/language-(\w+)/)?.[1] || ''
         const id = `code-${messageId}-${index}`
-        copyBtn.onclick = () => handleCodeCopy(codeText, id)
 
-        if (copiedCode[id]) {
-          copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+        if (!buttonContainer) {
+          buttonContainer = document.createElement('div')
+          buttonContainer.className = 'code-actions-container'
+          
+          copyBtn = document.createElement('button')
+          copyBtn.className = 'code-copy-btn'
+          copyBtn.title = 'Copy code'
+          
+          downloadBtn = document.createElement('button')
+          downloadBtn.className = 'code-download-btn'
+          downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>'
+          downloadBtn.title = 'Download as file'
+          downloadBtn.onclick = () => handleDownloadCode(codeText, language, index)
+
+          buttonContainer.appendChild(copyBtn)
+          buttonContainer.appendChild(downloadBtn)
+          pre.style.position = 'relative'
+          pre.appendChild(buttonContainer)
         }
 
-        pre.style.position = 'relative'
-        pre.appendChild(copyBtn)
+        copyBtn.onclick = () => handleCodeCopy(codeText, id)
+        
+        if (copiedCode[id]) {
+          copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+        } else {
+          copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
+        }
       })
 
       tables.forEach((table, index) => {

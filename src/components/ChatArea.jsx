@@ -14,9 +14,11 @@ import {
     IoChevronDown,
     IoWarning,
 } from "react-icons/io5";
+import { IoSettingsOutline } from "react-icons/io5";
 import Message from "./Message";
 import ContextSettingsModal from "./ContextSettingsModal";
 import MessageSelector from "./MessageSelector";
+import ProjectSettingsModal from "./ProjectSettingsModal";
 import { sendMessageToOpenAI, fetchAvailableModels } from "../utils/openai";
 import {
     saveSettings,
@@ -50,6 +52,9 @@ function ChatArea({
     onToggleSidebar,
     theme,
     onToggleTheme,
+    currentProject,
+    onUpdateProject,
+    onProjectSettingsButtonRef,
 }) {
     const getMaxContextTokensValue = () => settings.maxContextTokens || 100000;
     
@@ -86,6 +91,8 @@ function ChatArea({
     const [summarizationMode, setSummarizationMode] = useState(
         loadSummarizationMode()
     );
+    const [showProjectSettings, setShowProjectSettings] = useState(false);
+    const projectSettingsButtonRef = useRef(null);
     const messagesEndRef = useRef(null);
     const textareaRef = useRef(null);
     const messagesContainerRef = useRef(null);
@@ -307,13 +314,21 @@ function ChatArea({
         attachedFiles.forEach((file) => {
             totalTokens += estimateTokenCount(file.content);
         });
+        if (currentProject?.files) {
+            currentProject.files.forEach((file) => {
+                totalTokens += estimateTokenCount(file.content);
+            });
+        }
         setTokenCount(totalTokens);
-    }, [input, attachedFiles]);
+    }, [input, attachedFiles, currentProject?.files]);
 
     useEffect(() => {
-        const systemMsg = settings.systemMessage || "";
+        let systemMsg = settings.systemMessage || "";
+        if (currentProject?.systemInstruction) {
+            systemMsg = currentProject.systemInstruction;
+        }
         setSystemMessageTokens(estimateTokenCount(systemMsg));
-    }, [settings.systemMessage]);
+    }, [settings.systemMessage, currentProject?.systemInstruction]);
 
     const getMaxContextTokens = () => {
         const model = availableModels.find((m) => m.id === settings.model);
@@ -545,8 +560,15 @@ function ChatArea({
         let messageContent = input.trim();
         let fileContentsForAPI = "";
 
+        if (currentProject?.files && currentProject.files.length > 0) {
+            fileContentsForAPI += "\n\n--- Project Files ---\n";
+            currentProject.files.forEach((file) => {
+                fileContentsForAPI += `\n[File: ${file.name}]\n${file.content}\n`;
+            });
+        }
+
         if (attachedFiles.length > 0) {
-            fileContentsForAPI = "\n\n--- Attached Files ---\n";
+            fileContentsForAPI += "\n\n--- Attached Files ---\n";
             attachedFiles.forEach((file) => {
                 fileContentsForAPI += `\n[File: ${file.name}]\n${file.content}\n`;
             });
@@ -576,13 +598,14 @@ function ChatArea({
 
         let apiMessages;
         const summaryData = conversationSummaries[conversation.id];
+        const systemMessage = currentProject?.systemInstruction || settings.systemMessage || "";
 
         if (contextStrategy === CONTEXT_STRATEGIES.LAST_MESSAGE) {
             apiMessages = [];
-            if (settings.systemMessage && settings.systemMessage.trim()) {
+            if (systemMessage && systemMessage.trim()) {
                 apiMessages.push({
                     role: "system",
-                    content: settings.systemMessage.trim(),
+                    content: systemMessage.trim(),
                 });
             }
             apiMessages.push({
@@ -596,7 +619,7 @@ function ChatArea({
                 selectedMessageIds.length > 0 ? selectedMessageIds : undefined,
                 null,
                 5,
-                settings.systemMessage || ""
+                systemMessage
             );
         } else if (contextStrategy === CONTEXT_STRATEGIES.SUMMARIZATION) {
             apiMessages = prepareMessagesForAPI(
@@ -605,7 +628,7 @@ function ChatArea({
                 [],
                 summaryData,
                 5,
-                settings.systemMessage || ""
+                systemMessage
             );
         } else if (contextStrategy === CONTEXT_STRATEGIES.SLIDING_WINDOW) {
             apiMessages = prepareMessagesForAPI(
@@ -614,7 +637,7 @@ function ChatArea({
                 [],
                 null,
                 windowSize,
-                settings.systemMessage || ""
+                systemMessage
             );
         } else {
             apiMessages = prepareMessagesForAPI(
@@ -623,7 +646,7 @@ function ChatArea({
                 [],
                 null,
                 5,
-                settings.systemMessage || ""
+                systemMessage
             );
         }
 
@@ -735,6 +758,58 @@ function ChatArea({
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
+    if (!currentProject) {
+        return (
+            <div className="chat-area">
+                <div className="chat-header">
+                    <button
+                        className="toggle-sidebar-btn"
+                        onClick={onToggleSidebar}
+                        title="Toggle sidebar"
+                    >
+                        {sidebarOpen ? (
+                            <HiChevronDoubleLeft size={20} />
+                        ) : (
+                            <HiChevronDoubleRight size={20} />
+                        )}
+                    </button>
+                    <div className="title-wrapper">
+                        <h2>AI Chatbot</h2>
+                    </div>
+                    <div className="chat-header-actions">
+                        <button
+                            className="theme-toggle-btn"
+                            onClick={onToggleTheme}
+                            title={`Switch to ${
+                                theme === "dark" ? "light" : "dark"
+                            } mode`}
+                        >
+                            {theme === "dark" ? (
+                                <IoSunnyOutline size={20} />
+                            ) : (
+                                <IoMoonOutline size={20} />
+                            )}
+                        </button>
+                    </div>
+                </div>
+                <div className="messages-container">
+                    <div className="empty-state instructions">
+                        <h1>Welcome to AI Chatbot</h1>
+                        <div className="instructions-content">
+                            <p>This tool is project-based. To get started:</p>
+                            <ol>
+                                <li>Click "New Project" in the sidebar to create a project</li>
+                                <li>Select a project from the sidebar to start chatting</li>
+                                <li>Each project can have multiple conversations</li>
+                                <li>You can add files and configure settings for each project</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (!conversation) {
         return <div className="chat-area">Loading...</div>;
     }
@@ -793,19 +868,36 @@ function ChatArea({
                         </button>
                     </div>
                 )}
-                <button
-                    className="theme-toggle-btn"
-                    onClick={onToggleTheme}
-                    title={`Switch to ${
-                        theme === "dark" ? "light" : "dark"
-                    } mode`}
-                >
-                    {theme === "dark" ? (
-                        <IoSunnyOutline size={20} />
-                    ) : (
-                        <IoMoonOutline size={20} />
+                <div className="chat-header-actions">
+                    {currentProject && (
+                        <button
+                            ref={(ref) => {
+                                projectSettingsButtonRef.current = ref;
+                                if (onProjectSettingsButtonRef) {
+                                    onProjectSettingsButtonRef(ref);
+                                }
+                            }}
+                            className="project-settings-btn"
+                            onClick={() => setShowProjectSettings(true)}
+                            title="Project settings"
+                        >
+                            <IoSettingsOutline size={20} />
+                        </button>
                     )}
-                </button>
+                    <button
+                        className="theme-toggle-btn"
+                        onClick={onToggleTheme}
+                        title={`Switch to ${
+                            theme === "dark" ? "light" : "dark"
+                        } mode`}
+                    >
+                        {theme === "dark" ? (
+                            <IoSunnyOutline size={20} />
+                        ) : (
+                            <IoMoonOutline size={20} />
+                        )}
+                    </button>
+                </div>
             </div>
 
             <div className="messages-container" ref={messagesContainerRef}>
@@ -1242,6 +1334,17 @@ function ChatArea({
                     onSelectionChange={setSelectedMessageIds}
                     onClose={() => setShowMessageSelector(false)}
                     onApply={() => setShowMessageSelector(false)}
+                />
+            )}
+
+            {showProjectSettings && currentProject && (
+                <ProjectSettingsModal
+                    project={currentProject}
+                    onClose={() => setShowProjectSettings(false)}
+                    onSave={(updates) => {
+                        onUpdateProject(currentProject.id, updates);
+                        setShowProjectSettings(false);
+                    }}
                 />
             )}
         </div>

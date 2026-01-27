@@ -1,0 +1,204 @@
+.navigation-demo-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.navigation-demo-modal {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+.navigation-demo-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navigation-demo-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.navigation-demo-header .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.navigation-demo-header .close-btn:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.navigation-demo-content {
+    padding: 20px;
+}
+
+.navigation-demo-content p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.navigation-demo-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.navigation-demo-footer .skip-btn,
+.navigation-demo-footer .next-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.navigation-demo-footer .skip-btn {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.navigation-demo-footer .skip-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.navigation-demo-footer .next-btn {
+    background-color: var(--button-bg);
+    color: white;
+}
+
+.navigation-demo-footer .next-btn:hover {
+    opacity: 0.9;
+}
+
+.navigation-demo-tooltip {
+    position: fixed;
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    width: 300px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    z-index: 2001;
+    border: 2px solid var(--button-bg);
+}
+
+.navigation-demo-tooltip-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navigation-demo-tooltip-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.navigation-demo-tooltip-header .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.navigation-demo-tooltip-header .close-btn:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.navigation-demo-tooltip-content {
+    padding: 16px;
+}
+
+.navigation-demo-tooltip-content p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.navigation-demo-tooltip-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.navigation-demo-tooltip-footer .skip-btn,
+.navigation-demo-tooltip-footer .next-btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.navigation-demo-tooltip-footer .skip-btn {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.navigation-demo-tooltip-footer .skip-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.navigation-demo-tooltip-footer .next-btn {
+    background-color: var(--button-bg);
+    color: white;
+}
+
+.navigation-demo-tooltip-footer .next-btn:hover {
+    opacity: 0.9;
+}
+

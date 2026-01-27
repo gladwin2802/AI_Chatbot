@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { IoAddOutline } from 'react-icons/io5'
+import { IoAddOutline, IoFolderOutline } from 'react-icons/io5'
 import { IoTrashOutline } from 'react-icons/io5'
-import { IoCreateOutline, IoCheckmark, IoClose } from 'react-icons/io5'
+import { IoCreateOutline, IoCheckmark, IoClose, IoChevronBack } from 'react-icons/io5'
 import { IoSettingsOutline } from 'react-icons/io5'
 import '../styles/Sidebar.css'
 
@@ -13,7 +13,13 @@ function Sidebar({
   onDeleteConversation,
   onOpenSettings,
   isOpen,
-  onUpdateConversation
+  onUpdateConversation,
+  projects,
+  currentProject,
+  onCreateProject,
+  onSelectProject,
+  onBackToProjects,
+  onDeleteProject
 }) {
   const [editingId, setEditingId] = useState(null)
   const [editedTitle, setEditedTitle] = useState('')
@@ -51,17 +57,41 @@ function Sidebar({
     setEditedTitle('')
   }
 
+  const filteredConversations = currentProject
+    ? conversations.filter(conv => conv.projectId === currentProject.id)
+    : []
+
   return (
     <div className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
-      <div className="sidebar-header">
-        <button className="new-chat-btn" onClick={onNewConversation}>
-          <IoAddOutline className="icon" size={18} />
-          New Chat
-        </button>
-      </div>
+      {currentProject ? (
+        <>
+          <div className="sidebar-header">
+            <button className="back-btn" onClick={onBackToProjects} title="Back to projects">
+              <IoChevronBack size={18} />
+            </button>
+            <div className="project-header-title">{currentProject.name}</div>
+          </div>
+          <div className="sidebar-header">
+            <button className="new-chat-btn" onClick={onNewConversation}>
+              <IoAddOutline className="icon" size={18} />
+              New Chat
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="sidebar-header">
+            <button className="new-project-btn" onClick={onCreateProject}>
+              <IoAddOutline className="icon" size={18} />
+              New Project
+            </button>
+          </div>
+        </>
+      )}
 
       <div className="conversations-list">
-        {conversations.map(conv => (
+        {currentProject ? (
+          filteredConversations.map(conv => (
           <div
             key={conv.id}
             className={`conversation-item ${conv.id === currentConversationId ? 'active' : ''}`}
@@ -129,7 +159,34 @@ function Sidebar({
               )}
             </div>
           </div>
-        ))}
+        ))
+        ) : (
+          projects.map(project => (
+            <div
+              key={project.id}
+              className="project-item"
+              onClick={() => onSelectProject(project.id)}
+            >
+              <IoFolderOutline size={18} className="project-icon" />
+              <div className="project-content">
+                <div className="project-name">{project.name}</div>
+                <div className="project-date">{formatDate(project.createdAt)}</div>
+              </div>
+              <div className="project-actions">
+                <button
+                  className="project-delete-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDeleteProject(project.id)
+                  }}
+                  title="Delete project"
+                >
+                  <IoTrashOutline size={14} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="sidebar-footer">

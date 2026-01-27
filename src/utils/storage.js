@@ -6,6 +6,8 @@ const CONVERSATION_SUMMARIES_KEY = "ai_chatbot_conversation_summaries";
 const WINDOW_SIZE_KEY = "ai_chatbot_window_size";
 const SUMMARIZATION_MODE_KEY = "ai_chatbot_summarization_mode";
 const SYSTEM_MESSAGE_KEY = "ai_chatbot_system_message";
+const PROJECTS_KEY = "ai_chatbot_projects";
+const CURRENT_PROJECT_KEY = "ai_chatbot_current_project";
 
 export const loadConversations = () => {
     try {
@@ -178,5 +180,45 @@ export const saveSystemMessage = (message) => {
         localStorage.setItem(SYSTEM_MESSAGE_KEY, message);
     } catch (error) {
         console.error("Error saving system message:", error);
+    }
+};
+
+export const loadProjects = () => {
+    try {
+        const data = localStorage.getItem(PROJECTS_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (error) {
+        console.error("Error loading projects:", error);
+        return [];
+    }
+};
+
+export const saveProjects = (projects) => {
+    try {
+        localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+    } catch (error) {
+        console.error("Error saving projects:", error);
+    }
+};
+
+export const loadCurrentProject = () => {
+    try {
+        const projectId = localStorage.getItem(CURRENT_PROJECT_KEY);
+        return projectId || null;
+    } catch (error) {
+        console.error("Error loading current project:", error);
+        return null;
+    }
+};
+
+export const saveCurrentProject = (projectId) => {
+    try {
+        if (projectId) {
+            localStorage.setItem(CURRENT_PROJECT_KEY, projectId);
+        } else {
+            localStorage.removeItem(CURRENT_PROJECT_KEY);
+        }
+    } catch (error) {
+        console.error("Error saving current project:", error);
     }
 };

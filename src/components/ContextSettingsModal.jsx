@@ -55,26 +55,31 @@ function ContextSettingsModal({
                         />
                     </div>
 
-                    {contextStrategy === CONTEXT_STRATEGIES.SLIDING_WINDOW &&
-                        totalMessages > 0 && (
-                            <div className="settings-section">
-                                <label className="section-label">
-                                    Window Size
-                                </label>
+                    {contextStrategy === CONTEXT_STRATEGIES.SLIDING_WINDOW && (
+                        <div className="settings-section">
+                            <label className="section-label">
+                                Window Size
+                            </label>
+                            {totalMessages > 0 ? (
                                 <WindowSizeSelector
                                     windowSize={windowSize}
                                     onWindowSizeChange={onWindowSizeChange}
                                     totalMessages={totalMessages}
                                 />
-                            </div>
-                        )}
+                            ) : (
+                                <div className="settings-hint">
+                                    Start a conversation to configure window size
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                    {contextStrategy === CONTEXT_STRATEGIES.FULL_HISTORY &&
-                        totalMessages > 0 && (
-                            <div className="settings-section">
-                                <label className="section-label">
-                                    Message Selection
-                                </label>
+                    {contextStrategy === CONTEXT_STRATEGIES.FULL_HISTORY && (
+                        <div className="settings-section">
+                            <label className="section-label">
+                                Message Selection
+                            </label>
+                            {totalMessages > 0 ? (
                                 <button
                                     className="action-btn"
                                     onClick={() => {
@@ -84,15 +89,20 @@ function ContextSettingsModal({
                                 >
                                     Select Messages ({selectedMessageCount})
                                 </button>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="settings-hint">
+                                    Start a conversation to select messages
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                    {contextStrategy === CONTEXT_STRATEGIES.SUMMARIZATION &&
-                        totalMessages > 0 && (
-                            <div className="settings-section">
-                                <label className="section-label">
-                                    Summarization Mode
-                                </label>
+                    {contextStrategy === CONTEXT_STRATEGIES.SUMMARIZATION && (
+                        <div className="settings-section">
+                            <label className="section-label">
+                                Summarization Mode
+                            </label>
+                            {totalMessages > 0 ? (
                                 <div className="summarization-mode-options">
                                     <label className="mode-option">
                                         <input
@@ -144,8 +154,13 @@ function ContextSettingsModal({
                                         </div>
                                     </label>
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="settings-hint">
+                                    Start a conversation to configure summarization
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <div className="settings-section context-info-section">
                         <label className="section-label">Context Status</label>
