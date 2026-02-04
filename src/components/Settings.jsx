@@ -6,6 +6,7 @@ import "../styles/Settings.css";
 
 function Settings({ settings, onClose, onSave, isRequired = false }) {
     const [formData, setFormData] = useState({
+        provider: settings.provider || "openai",
         baseUrl: settings.baseUrl || "",
         apiKey: settings.apiKey || "",
         model: settings.model || "",
@@ -43,6 +44,33 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
 
     useEffect(() => {
         const loadModels = async () => {
+            if (formData.provider === "vertex-ai") {
+                setLoadingModels(true);
+                setModelsError(null);
+
+                try {
+                    const models = await fetchAvailableModels("vertex-ai", "", "vertex-ai");
+                    const uniqueModels = models.filter(
+                        (model, index, self) =>
+                            index === self.findIndex((m) => m.id === model.id)
+                    );
+                    setAvailableModels(uniqueModels);
+
+                    if (uniqueModels.length > 0 && !formData.model) {
+                        setFormData((prev) => ({
+                            ...prev,
+                            model: uniqueModels[0].id,
+                        }));
+                    }
+                } catch (error) {
+                    setModelsError(error.message);
+                    setAvailableModels([]);
+                } finally {
+                    setLoadingModels(false);
+                }
+                return;
+            }
+
             if (!formData.baseUrl) {
                 setAvailableModels([]);
                 return;
@@ -54,7 +82,8 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
             try {
                 const models = await fetchAvailableModels(
                     formData.baseUrl,
-                    formData.apiKey
+                    formData.apiKey,
+                    formData.provider
                 );
 
                 const uniqueModels = models.filter(
@@ -79,7 +108,7 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
         };
 
         loadModels();
-    }, [formData.baseUrl, formData.apiKey]);
+    }, [formData.provider, formData.baseUrl, formData.apiKey]);
 
     const getMaxOutputTokens = (model) => {
         if (!model) return 32000;
@@ -145,12 +174,18 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        if (isRequired && (!formData.baseUrl || !formData.apiKey)) {
-            alert("Please enter both Base URL and API Key to continue.");
-            return;
+
+        if (isRequired) {
+            if (formData.provider === "openai" && (!formData.baseUrl || !formData.apiKey)) {
+                alert("Please enter both Base URL and API Key to continue.");
+                return;
+            }
+            if (formData.provider === "vertex-ai" && !formData.model) {
+                alert("Please select a model to continue.");
+                return;
+            }
         }
-        
+
         saveSettings(formData);
         onSave(formData);
     };
@@ -184,48 +219,77 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
                     <div className="settings-content">
                         {isRequired && (
                             <div className="setup-message">
-                                Please configure your Base URL and API Key to get
-                                started.
+                                {formData.provider === "openai"
+                                    ? "Please configure your Base URL and API Key to get started."
+                                    : "Please select a model to get started."}
                             </div>
                         )}
                         <div className="form-group">
-                            <label>Base URL</label>
-                            <input
-                                type="url"
-                                value={formData.baseUrl}
-                                onChange={(e) =>
+                            <label>Provider</label>
+                            <select
+                                value={formData.provider}
+                                onChange={(e) => {
+                                    const newProvider = e.target.value;
                                     setFormData({
                                         ...formData,
-                                        baseUrl: e.target.value,
-                                    })
-                                }
-                                placeholder="https://<your-openai-compatible-endpoint>/v1"
-                                required
-                            />
+                                        provider: newProvider,
+                                        model: "",
+                                    });
+                                }}
+                                className="provider-select"
+                            >
+                                <option value="openai">OpenAI</option>
+                                <option value="vertex-ai">Vertex AI</option>
+                            </select>
                             <div className="form-help">
-                                API endpoint base URL
+                                {formData.provider === "vertex-ai"
+                                    ? "Using hardcoded service account JSON for authentication"
+                                    : "OpenAI-compatible API endpoint"}
                             </div>
                         </div>
 
-                        <div className="form-group">
-                            <label>API Key</label>
-                            <input
-                                type="password"
-                                value={formData.apiKey}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        apiKey: e.target.value,
-                                    })
-                                }
-                                placeholder="Enter your API key"
-                                required
-                            />
-                        </div>
+                        {formData.provider === "openai" && (
+                            <>
+                                <div className="form-group">
+                                    <label>Base URL</label>
+                                    <input
+                                        type="url"
+                                        value={formData.baseUrl}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                baseUrl: e.target.value,
+                                            })
+                                        }
+                                        placeholder="https://<your-openai-compatible-endpoint>/v1"
+                                        required={formData.provider === "openai"}
+                                    />
+                                    <div className="form-help">
+                                        API endpoint base URL
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label>API Key</label>
+                                    <input
+                                        type="password"
+                                        value={formData.apiKey}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                apiKey: e.target.value,
+                                            })
+                                        }
+                                        placeholder="Enter your API key"
+                                        required={formData.provider === "openai"}
+                                    />
+                                </div>
+                            </>
+                        )}
 
                         <div className="form-group">
                             <label>Model</label>
-                            <div 
+                            <div
                                 className="settings-model-selector"
                                 ref={modelDropdownRef}
                             >
@@ -245,10 +309,12 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
                                         {loadingModels
                                             ? "Loading models..."
                                             : availableModels.length === 0
-                                            ? modelsError
-                                                ? "Failed to load models"
-                                                : "Enter Base URL first"
-                                            : getShortModelName(formData.model)}
+                                                ? modelsError
+                                                    ? "Failed to load models"
+                                                    : formData.provider === "vertex-ai"
+                                                        ? "Loading Vertex AI endpoints..."
+                                                        : "Enter Base URL first"
+                                                : getShortModelName(formData.model)}
                                     </span>
                                     <IoChevronDown size={16} />
                                 </button>
@@ -278,12 +344,11 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
                                                 filteredModels.map((model) => (
                                                     <div
                                                         key={model.id}
-                                                        className={`model-item ${
-                                                            model.id ===
+                                                        className={`model-item ${model.id ===
                                                             formData.model
-                                                                ? "active"
-                                                                : ""
-                                                        }`}
+                                                            ? "active"
+                                                            : ""
+                                                            }`}
                                                         onClick={() =>
                                                             handleModelSelect(
                                                                 model.id
@@ -316,19 +381,19 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
                                     )}
                                     {(currentModel.max_completion_tokens > 0 ||
                                         currentModel.max_tokens > 0) && (
-                                        <div className="model-info-item">
-                                            <span className="info-label">
-                                                Max Output:
-                                            </span>
-                                            <span className="info-value">
-                                                {(
-                                                    currentModel.max_completion_tokens ||
-                                                    currentModel.max_tokens
-                                                ).toLocaleString()}{" "}
-                                                tokens
-                                            </span>
-                                        </div>
-                                    )}
+                                            <div className="model-info-item">
+                                                <span className="info-label">
+                                                    Max Output:
+                                                </span>
+                                                <span className="info-value">
+                                                    {(
+                                                        currentModel.max_completion_tokens ||
+                                                        currentModel.max_tokens
+                                                    ).toLocaleString()}{" "}
+                                                    tokens
+                                                </span>
+                                            </div>
+                                        )}
                                     {currentModel.owned_by && (
                                         <div className="model-info-item">
                                             <span className="info-label">
@@ -396,9 +461,9 @@ function Settings({ settings, onClose, onSave, isRequired = false }) {
                                         Max output estimated as{" "}
                                         {currentModel.context_length > 0
                                             ? `${Math.floor(
-                                                  currentModel.context_length *
-                                                      0.5
-                                              ).toLocaleString()} (50% of context)`
+                                                currentModel.context_length *
+                                                0.5
+                                            ).toLocaleString()} (50% of context)`
                                             : "32,000 (default)"}
                                     </div>
                                 )}

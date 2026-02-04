@@ -34,7 +34,9 @@ function App() {
 
     useEffect(() => {
         const loadedSettings = loadSettings();
-        const configured = loadedSettings.baseUrl && loadedSettings.apiKey;
+        const configured = loadedSettings.provider === 'vertex-ai' 
+            ? loadedSettings.model 
+            : loadedSettings.baseUrl && loadedSettings.apiKey;
         setIsConfigured(configured);
         if (!configured) {
             setShowSettings(true);
@@ -331,8 +333,9 @@ function App() {
                     }}
                     onSave={(newSettings) => {
                         setSettings(newSettings);
-                        const configured =
-                            newSettings.baseUrl && newSettings.apiKey;
+                        const configured = newSettings.provider === 'vertex-ai' 
+                            ? newSettings.model 
+                            : newSettings.baseUrl && newSettings.apiKey;
                         setIsConfigured(configured);
                         if (configured) {
                             setShowSettings(false);

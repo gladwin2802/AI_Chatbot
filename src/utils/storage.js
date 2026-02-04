@@ -39,6 +39,7 @@ export const loadSettings = () => {
             };
         }
         return {
+            provider: "openai",
             baseUrl: "",
             apiKey: "",
             model: "",
@@ -50,6 +51,7 @@ export const loadSettings = () => {
     } catch (error) {
         console.error("Error loading settings:", error);
         return {
+            provider: "openai",
             baseUrl: "",
             apiKey: "",
             model: "",

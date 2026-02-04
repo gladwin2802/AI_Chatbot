@@ -57,7 +57,7 @@ function ChatArea({
     onProjectSettingsButtonRef,
 }) {
     const getMaxContextTokensValue = () => settings.maxContextTokens || 100000;
-    
+
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -104,15 +104,15 @@ function ChatArea({
 
     useEffect(() => {
         const loadModels = async () => {
-            if (!settings.baseUrl || !settings.apiKey) {
-                return;
-            }
+            const isVertex = settings.provider === "vertex-ai";
+            if (!isVertex && (!settings.baseUrl || !settings.apiKey)) return;
 
             setLoadingModels(true);
             try {
                 const models = await fetchAvailableModels(
                     settings.baseUrl,
-                    settings.apiKey
+                    settings.apiKey,
+                    settings.provider
                 );
 
                 const uniqueModels = models.filter(
@@ -129,7 +129,7 @@ function ChatArea({
         };
 
         loadModels();
-    }, [settings.baseUrl, settings.apiKey]);
+    }, [settings.provider, settings.baseUrl, settings.apiKey]);
 
     useEffect(() => {
         if (conversation && conversation.messages.length > 0) {
@@ -342,9 +342,9 @@ function ChatArea({
         if (tokenCount >= usableTokens) {
             alert(
                 `Cannot attach files: Input token limit reached.\n\n` +
-                    `Current input: ${tokenCount.toLocaleString()} tokens\n` +
-                    `Available: ${usableTokens.toLocaleString()} tokens (after ${systemMessageTokens.toLocaleString()} system message tokens)\n\n` +
-                    `Please remove some files or increase Max Context Tokens in settings.`
+                `Current input: ${tokenCount.toLocaleString()} tokens\n` +
+                `Available: ${usableTokens.toLocaleString()} tokens (after ${systemMessageTokens.toLocaleString()} system message tokens)\n\n` +
+                `Please remove some files or increase Max Context Tokens in settings.`
             );
             e.target.value = "";
             return;
@@ -391,8 +391,7 @@ function ChatArea({
 
                 if (currentTokens + fileTokens > maxContextLimit) {
                     alert(
-                        `Adding "${
-                            file.name
+                        `Adding "${file.name
                         }" would exceed token limit (${maxContextLimit.toLocaleString()} tokens). Cannot attach more files.`
                     );
                     continue;
@@ -472,8 +471,8 @@ function ChatArea({
             if (container) {
                 const isNearBottom =
                     container.scrollHeight -
-                        container.scrollTop -
-                        container.clientHeight <
+                    container.scrollTop -
+                    container.clientHeight <
                     100;
                 setShowScrollDown(!isNearBottom);
             }
@@ -509,7 +508,7 @@ function ChatArea({
                     setShowTopArrow(navigator.scrollTop > 0);
                     setShowBottomArrow(
                         navigator.scrollTop <
-                            navigator.scrollHeight - navigator.clientHeight
+                        navigator.scrollHeight - navigator.clientHeight
                     );
                 } else {
                     setShowTopArrow(false);
@@ -534,21 +533,28 @@ function ChatArea({
         if (tokenCount > usableTokens) {
             alert(
                 `Cannot send message: Input token limit exceeded.\n\n` +
-                    `Your input: ${tokenCount.toLocaleString()} tokens\n` +
-                    `Available: ${usableTokens.toLocaleString()} tokens (after ${systemMessageTokens.toLocaleString()} system message tokens)\n\n` +
-                    `Please remove some files, reduce message length, or increase Max Context Tokens in settings.`
+                `Your input: ${tokenCount.toLocaleString()} tokens\n` +
+                `Available: ${usableTokens.toLocaleString()} tokens (after ${systemMessageTokens.toLocaleString()} system message tokens)\n\n` +
+                `Please remove some files, reduce message length, or increase Max Context Tokens in settings.`
             );
             return;
         }
 
-        if (!settings.baseUrl) {
-            alert("Please set the Base URL in settings");
-            return;
-        }
+        if (settings.provider === "vertex-ai") {
+            if (!settings.model) {
+                alert("Please select a model in settings");
+                return;
+            }
+        } else {
+            if (!settings.baseUrl) {
+                alert("Please set the Base URL in settings");
+                return;
+            }
 
-        if (!settings.apiKey) {
-            alert("Please set your API key in settings");
-            return;
+            if (!settings.apiKey) {
+                alert("Please set your API key in settings");
+                return;
+            }
         }
 
         let messageContent = input.trim();
@@ -651,11 +657,11 @@ function ChatArea({
         if (totalApiTokens > getMaxContextTokensValue()) {
             alert(
                 `Cannot send message: Total context (${totalApiTokens.toLocaleString()} tokens) exceeds limit (${getMaxContextTokensValue().toLocaleString()} tokens).\n\n` +
-                    `Please try:\n` +
-                    `• Switch to a different context strategy (e.g., Sliding Window or Summarization)\n` +
-                    `• Reduce window size or deselect some messages\n` +
-                    `• Increase Max Context Tokens in settings\n` +
-                    `• Shorten your message or remove attachments`
+                `Please try:\n` +
+                `• Switch to a different context strategy (e.g., Sliding Window or Summarization)\n` +
+                `• Reduce window size or deselect some messages\n` +
+                `• Increase Max Context Tokens in settings\n` +
+                `• Shorten your message or remove attachments`
             );
             return;
         }
@@ -774,9 +780,8 @@ function ChatArea({
                         <button
                             className="theme-toggle-btn"
                             onClick={onToggleTheme}
-                            title={`Switch to ${
-                                theme === "dark" ? "light" : "dark"
-                            } mode`}
+                            title={`Switch to ${theme === "dark" ? "light" : "dark"
+                                } mode`}
                         >
                             {theme === "dark" ? (
                                 <IoSunnyOutline size={20} />
@@ -881,9 +886,8 @@ function ChatArea({
                     <button
                         className="theme-toggle-btn"
                         onClick={onToggleTheme}
-                        title={`Switch to ${
-                            theme === "dark" ? "light" : "dark"
-                        } mode`}
+                        title={`Switch to ${theme === "dark" ? "light" : "dark"
+                            } mode`}
                     >
                         {theme === "dark" ? (
                             <IoSunnyOutline size={20} />
@@ -952,9 +956,8 @@ function ChatArea({
             {conversation.messages.length > 0 && (
                 <>
                     <div
-                        className={`message-navigator ${
-                            showNavigator ? "visible" : ""
-                        }`}
+                        className={`message-navigator ${showNavigator ? "visible" : ""
+                            }`}
                         onMouseEnter={handleNavigatorMouseEnter}
                         onMouseLeave={handleNavigatorMouseLeave}
                     >
@@ -969,9 +972,8 @@ function ChatArea({
                                     key={msg.id}
                                     className={`dot-group ${msg.role}`}
                                     onClick={() => navigateToMessage(msg.id)}
-                                    title={`${
-                                        msg.role === "user" ? "User" : "AI"
-                                    } message`}
+                                    title={`${msg.role === "user" ? "User" : "AI"
+                                        } message`}
                                 >
                                     {msg.role === "user" ? (
                                         <span className="dot"></span>
@@ -1087,12 +1089,11 @@ function ChatArea({
                                                 filteredModels.map((model) => (
                                                     <div
                                                         key={model.id}
-                                                        className={`model-item ${
-                                                            model.id ===
+                                                        className={`model-item ${model.id ===
                                                             settings.model
-                                                                ? "active"
-                                                                : ""
-                                                        }`}
+                                                            ? "active"
+                                                            : ""
+                                                            }`}
                                                         onClick={() =>
                                                             handleModelSelect(
                                                                 model.id
@@ -1190,8 +1191,8 @@ function ChatArea({
                 <div className="token-counter">
                     {tokenCount >
                         (getMaxContextTokensValue() - systemMessageTokens) * 0.8 && (
-                        <span className="token-warning">⚠️</span>
-                    )}
+                            <span className="token-warning">⚠️</span>
+                        )}
                     {systemMessageTokens > 0 && (
                         <>
                             <span
